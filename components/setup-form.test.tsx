@@ -15,6 +15,16 @@ describe("SetupForm", () => {
     toastErrorMock.mockReset();
   });
 
+  it("uses the shared input styling for all account fields", () => {
+    render(<SetupForm />);
+
+    for (const label of ["ID", "パスワード", "パスワード（確認）"]) {
+      const input = screen.getByLabelText(label);
+      expect(input).toHaveAttribute("data-slot", "input");
+      expect(input).toHaveClass("h-9", "border-input", "focus-visible:ring-[3px]");
+    }
+  });
+
   it("creates the chosen account then navigates to the dashboard", async () => {
     const fetchMock = vi.fn().mockResolvedValue({ ok: true });
     vi.stubGlobal("fetch", fetchMock);

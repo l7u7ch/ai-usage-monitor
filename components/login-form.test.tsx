@@ -18,6 +18,16 @@ describe("LoginForm", () => {
     toastErrorMock.mockReset();
   });
 
+  it("uses the shared input styling for both credential fields", () => {
+    render(<LoginForm />);
+
+    for (const label of ["ID", "パスワード"]) {
+      const input = screen.getByLabelText(label);
+      expect(input).toHaveAttribute("data-slot", "input");
+      expect(input).toHaveClass("h-9", "border-input", "focus-visible:ring-[3px]");
+    }
+  });
+
   it("submits ID and password then continues after successful login", async () => {
     const onAuthenticated = vi.fn();
     const fetchMock = vi.fn().mockResolvedValue({ ok: true });

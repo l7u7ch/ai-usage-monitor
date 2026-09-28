@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 export function SetupForm() {
   const router = useRouter();
@@ -41,8 +42,6 @@ export function SetupForm() {
     }
   }
 
-  const inputClass =
-    "w-full rounded-md border bg-background px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring";
   return (
     <form className="space-y-5" onSubmit={submit}>
       {/* <h1 className="text-xl font-semibold">初期アカウント作成</h1> */}
@@ -51,11 +50,10 @@ export function SetupForm() {
         <label className="text-sm font-medium" htmlFor="setup-id">
           ID
         </label>
-        <input
+        <Input
           id="setup-id"
           name="id"
           autoComplete="username"
-          className={inputClass}
           pattern="[A-Za-z0-9_.-]+"
           maxLength={64}
           onChange={(event) => setId(event.target.value)}
@@ -67,12 +65,11 @@ export function SetupForm() {
         <label className="text-sm font-medium" htmlFor="setup-password">
           パスワード
         </label>
-        <input
+        <Input
           id="setup-password"
           name="password"
           type="password"
           autoComplete="new-password"
-          className={inputClass}
           maxLength={1024}
           onChange={(event) => setPassword(event.target.value)}
           required
@@ -83,12 +80,11 @@ export function SetupForm() {
         <label className="text-sm font-medium" htmlFor="setup-confirmation">
           パスワード（確認）
         </label>
-        <input
+        <Input
           id="setup-confirmation"
           name="confirmation"
           type="password"
           autoComplete="new-password"
-          className={inputClass}
           onChange={(event) => setConfirmation(event.target.value)}
           required
           value={confirmation}

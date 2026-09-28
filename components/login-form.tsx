@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 type LoginFormProps = {
   onAuthenticated?: () => void;
@@ -46,11 +47,10 @@ export function LoginForm({ onAuthenticated }: LoginFormProps) {
     <form className="space-y-5" onSubmit={submit}>
       <div className="space-y-2">
         <label className="text-sm font-medium" htmlFor="login-id">ID</label>
-        <input
+        <Input
           id="login-id"
           name="id"
           autoComplete="username"
-          className="w-full rounded-md border bg-background px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
           onChange={(event) => setId(event.target.value)}
           required
           value={id}
@@ -58,12 +58,11 @@ export function LoginForm({ onAuthenticated }: LoginFormProps) {
       </div>
       <div className="space-y-2">
         <label className="text-sm font-medium" htmlFor="login-password">パスワード</label>
-        <input
+        <Input
           id="login-password"
           name="password"
           type="password"
           autoComplete="current-password"
-          className="w-full rounded-md border bg-background px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
           onChange={(event) => setPassword(event.target.value)}
           required
           value={password}
