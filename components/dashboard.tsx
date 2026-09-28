@@ -2,11 +2,10 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Copy, LoaderCircle, LogOut, Plus, RefreshCw } from "lucide-react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
-import { AccountCard } from "@/components/account-card";
+import { AccountUsageTable } from "@/components/account-usage-table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -432,61 +431,21 @@ export function Dashboard({
       <main className="mx-auto min-h-[calc(100vh-4rem)] w-full max-w-[1500px] px-6 py-8 lg:px-10">
         {accounts.length ? (
           <div className="overflow-hidden rounded-md border border-border/80 bg-card/30">
-            <div className="overflow-x-auto">
-              <table className="w-full border-collapse">
-                <thead>
-                  <tr className="border-b border-border/80 bg-muted/30 text-xs uppercase tracking-[0.12em] text-muted-foreground">
-                    <th
-                      scope="col"
-                      className="min-w-64 px-5 py-3 text-left font-medium"
-                    >
-                      Account
-                    </th>
-                    <th
-                      scope="col"
-                      className="min-w-64 px-5 py-3 text-left font-medium"
-                    >
-                      5時間枠
-                    </th>
-                    <th
-                      scope="col"
-                      className="min-w-64 px-5 py-3 text-left font-medium"
-                    >
-                      週間枠
-                    </th>
-                    <th
-                      scope="col"
-                      className="w-16 px-3 py-3 text-right font-medium"
-                    >
-                      操作
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {accounts.map((account, index) => (
-                    <AccountCard
-                      key={account.id}
-                      account={account}
-                      busy={actionPendingId === account.id || Boolean(login)}
-                      canMoveUp={index > 0}
-                      canMoveDown={index < accounts.length - 1}
-                      onMoveUp={(selected) => void moveAccount(selected.id, -1)}
-                      onMoveDown={(selected) =>
-                        void moveAccount(selected.id, 1)
-                      }
-                      onRename={(selected) => {
-                        setRenamingAccount(selected);
-                        setDisplayNameInput(selected.displayName ?? "");
-                      }}
-                      onReauthenticate={(selected) =>
-                        void reauthenticateAccount(selected)
-                      }
-                      onDelete={setAccountToDelete}
-                    />
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <AccountUsageTable
+              accounts={accounts}
+              busyAccountId={actionPendingId}
+              loginPending={Boolean(login)}
+              onMoveUp={(selected) => void moveAccount(selected.id, -1)}
+              onMoveDown={(selected) => void moveAccount(selected.id, 1)}
+              onRename={(selected) => {
+                setRenamingAccount(selected);
+                setDisplayNameInput(selected.displayName ?? "");
+              }}
+              onReauthenticate={(selected) =>
+                void reauthenticateAccount(selected)
+              }
+              onDelete={setAccountToDelete}
+            />
           </div>
         ) : (
           <div className="rounded-xl border border-dashed px-6 py-16 text-center">

@@ -1,7 +1,7 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
-import { AccountCard, formatTimeUntilReset } from "@/components/account-card";
+import { AccountUsageTable, formatTimeUntilReset } from "@/components/account-usage-table";
 import type { AccountUsage } from "@/lib/accounts/account-usage";
 
 const account: AccountUsage = {
@@ -28,29 +28,26 @@ const account: AccountUsage = {
   ],
 };
 
-function renderAccount(
-  accountOverride: AccountUsage = account,
-  moveOptions: { canMoveUp?: boolean; canMoveDown?: boolean } = {},
-) {
+function renderAccounts(accounts: AccountUsage[]) {
   return render(
-    <table>
-      <tbody>
-        <AccountCard
-          account={accountOverride}
-          canMoveUp={moveOptions.canMoveUp ?? false}
-          canMoveDown={moveOptions.canMoveDown ?? false}
-          onMoveUp={() => {}}
-          onMoveDown={() => {}}
-          onRename={() => {}}
-          onReauthenticate={() => {}}
-          onDelete={() => {}}
-        />
-      </tbody>
-    </table>,
+    <AccountUsageTable
+      accounts={accounts}
+      busyAccountId={null}
+      loginPending={false}
+      onMoveUp={() => {}}
+      onMoveDown={() => {}}
+      onRename={() => {}}
+      onReauthenticate={() => {}}
+      onDelete={() => {}}
+    />,
   );
 }
 
-describe("AccountCard", () => {
+function renderAccount(accountOverride: AccountUsage = account) {
+  return renderAccounts([accountOverride]);
+}
+
+describe("AccountUsageTable", () => {
   it("renders one account as a quota matrix row", () => {
     renderAccount();
 
@@ -101,19 +98,38 @@ describe("AccountCard", () => {
   });
 
   it("disables moving past either account-list boundary", async () => {
-    const { container } = renderAccount(account, { canMoveUp: false, canMoveDown: true });
+    const otherAccount = { ...account, id: "account-2", email: "other@example.com" };
+    const { container, unmount } = renderAccounts([account, otherAccount]);
     fireEvent.pointerDown(within(container).getByRole("button", { name: "me@example.comの操作" }), {
       button: 0,
       ctrlKey: false,
       pointerType: "mouse",
     });
-    const menu = within(await screen.findByRole("menu"));
+    const firstMenu = within(await screen.findByRole("menu"));
 
-    expect(menu.getByRole("menuitem", { name: "上へ移動" })).toHaveAttribute(
+    expect(firstMenu.getByRole("menuitem", { name: "上へ移動" })).toHaveAttribute(
       "aria-disabled",
       "true",
     );
-    expect(menu.getByRole("menuitem", { name: "下へ移動" })).not.toHaveAttribute(
+    expect(firstMenu.getByRole("menuitem", { name: "下へ移動" })).not.toHaveAttribute(
+      "aria-disabled",
+      "true",
+    );
+
+    unmount();
+    const secondTable = renderAccounts([account, otherAccount]);
+    fireEvent.pointerDown(within(secondTable.container).getByRole("button", { name: "other@example.comの操作" }), {
+      button: 0,
+      ctrlKey: false,
+      pointerType: "mouse",
+    });
+    const secondMenu = within(await screen.findByRole("menu"));
+
+    expect(secondMenu.getByRole("menuitem", { name: "上へ移動" })).not.toHaveAttribute(
+      "aria-disabled",
+      "true",
+    );
+    expect(secondMenu.getByRole("menuitem", { name: "下へ移動" })).toHaveAttribute(
       "aria-disabled",
       "true",
     );

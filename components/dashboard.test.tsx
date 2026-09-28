@@ -69,6 +69,12 @@ describe("Dashboard", () => {
     expect(screen.queryByText(/low capacity/i)).not.toBeInTheDocument();
   });
 
+  it("uses automatic column sizing for account usage values", () => {
+    render(<Dashboard initialAccounts={accounts} />);
+
+    expect(screen.getByRole("table")).toHaveClass("table-auto");
+  });
+
   it("links to the usage forecast from the account dashboard", () => {
     render(<Dashboard initialAccounts={accounts} />);
 
