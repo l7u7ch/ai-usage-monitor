@@ -76,19 +76,18 @@ describe("AccountUsageTable", () => {
     expect(within(table).getByRole("columnheader", { name: "アカウント" })).not.toHaveClass("min-w-64");
   });
 
-  it("gives both usage columns a 288px minimum width", () => {
+  it("uses six content-sized columns without the old minimum width", () => {
     const { container } = renderAccount();
     const table = within(container).getByRole("table");
     const headers = within(table).getAllByRole("columnheader");
     const row = within(table).getAllByRole("row")[1];
     const cells = row.querySelectorAll(":scope > th, :scope > td");
 
-    expect(cells).toHaveLength(3);
-    expect(headers[1]).toHaveClass("min-w-72");
-    expect(headers[2]).toHaveClass("min-w-72");
-    expect(cells[1]).toHaveClass("min-w-72");
-    expect(cells[2]).toHaveClass("min-w-72");
-    expect(cells[0]).not.toHaveClass("min-w-72");
+    expect(headers.map((header) => header.textContent)).toEqual([
+      "アカウント", "プラン", "5時間枠", "リセット（5時間枠）", "週間枠", "リセット（週間枠）",
+    ]);
+    expect(cells).toHaveLength(6);
+    [...headers, ...cells].forEach((cell) => expect(cell.className).not.toMatch(/min-w-/));
   });
 
   it("renders one account as a quota matrix row", () => {
@@ -96,11 +95,9 @@ describe("AccountUsageTable", () => {
 
     expect(screen.getByText("me@example.com")).toBeInTheDocument();
     expect(screen.getByText("plus")).toHaveClass("rounded-sm");
-    expect(screen.getByRole("progressbar", { name: "5時間の使用制限 72% 残り" })).toBeInTheDocument();
-    expect(screen.getByRole("progressbar", { name: "週間利用上限 41% 残り" })).toBeInTheDocument();
-    expect(screen.getByText("72")).toBeInTheDocument();
-    expect(screen.getByText("41")).toBeInTheDocument();
-    expect(screen.getAllByRole("progressbar")).toHaveLength(2);
+    expect(screen.getByText("72%")).toBeInTheDocument();
+    expect(screen.getByText("41%")).toBeInTheDocument();
+    expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();
   });
 
   it("uses compact vertical padding for account data cells", () => {
@@ -108,7 +105,7 @@ describe("AccountUsageTable", () => {
     const row = within(screen.getByRole("table")).getAllByRole("row")[1];
     const cells = row.querySelectorAll(":scope > th, :scope > td");
 
-    expect(cells).toHaveLength(3);
+    expect(cells).toHaveLength(6);
     cells.forEach((cell) => expect(cell).toHaveClass("py-4"));
   });
 
@@ -146,7 +143,7 @@ describe("AccountUsageTable", () => {
     const accountRow = getAccountRow(container);
 
     expect(within(table).queryByRole("columnheader", { name: "操作" })).not.toBeInTheDocument();
-    expect(accountRow.querySelectorAll(":scope > th, :scope > td")).toHaveLength(3);
+    expect(accountRow.querySelectorAll(":scope > th, :scope > td")).toHaveLength(6);
   });
 
   it("shows icons for available actions and hides reauthentication", async () => {
@@ -198,53 +195,41 @@ describe("AccountUsageTable", () => {
     [40, "bg-yellow-500"],
     [20, "bg-orange-500"],
     [19, "bg-red-500"],
-  ])("uses the expected indicator color at %i%% remaining", (remainingPercent, colorClass) => {
+  ])("uses the expected dot color at %i%% remaining", (remainingPercent, colorClass) => {
     const { container } = renderAccount({
       ...account,
       windows: [{ ...account.windows[0], remainingPercent }],
     });
 
-    expect(container.querySelector('[data-slot="progress-indicator"]')).toHaveClass(colorClass);
+    expect(container.querySelector('[data-slot="remaining-dot"]')).toHaveClass(colorClass);
   });
 
-  it("right-aligns the percentage and time remaining", () => {
+  it("left-aligns the smaller dot and percentage in the usage cell", () => {
     const { container } = renderAccount();
-    const quota = container.querySelector('[aria-label="5時間の使用制限 72% 残り"]');
-    const timeRemaining = Array.from(container.querySelectorAll("p")).find((element) =>
-      element.textContent?.startsWith("あと"),
-    );
-    const percentage = Array.from(container.querySelectorAll("p")).find((element) =>
-      element.textContent === "72%",
-    );
-
-    expect(quota).not.toBeNull();
-    expect(timeRemaining).not.toBeUndefined();
-    expect(quota!.compareDocumentPosition(timeRemaining!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(percentage?.parentElement).toHaveClass("justify-end");
-    expect(timeRemaining?.parentElement).toHaveClass("justify-between");
+    const percentage = within(container).getByText("72%");
+    expect(percentage.parentElement).toHaveClass("flex", "items-center");
+    expect(percentage).toHaveClass("text-xl");
+    expect(percentage.previousElementSibling).toHaveAttribute("data-slot", "remaining-dot");
   });
 
-  it("uses a restrained hierarchy for quota details", () => {
+  it("shows the full reset date and remaining time on one line in separate cells", () => {
     const { container } = renderAccount();
-    const percentage = Array.from(container.querySelectorAll("p")).find((element) =>
-      element.textContent === "72%",
-    );
-    const reset = screen.getAllByText(/^リセット/)[0];
-    const resetTime = reset.querySelector("span");
-    const timeRemaining = Array.from(container.querySelectorAll("p")).find((element) =>
-      element.textContent?.startsWith("あと"),
-    );
-
-    expect(percentage?.querySelector("span")).toHaveClass("text-foreground/70");
-    expect(reset).toHaveClass("text-[13px]", "text-muted-foreground");
-    expect(resetTime).toHaveClass("text-foreground/80");
-    expect(timeRemaining).toHaveClass("text-[13px]", "text-foreground/80");
+    const cells = getAccountRow(container).querySelectorAll(":scope > th, :scope > td");
+    expect(cells[2]).toHaveTextContent("72%");
+    expect(cells[4]).toHaveTextContent("41%");
+    for (const index of [3, 5]) {
+      expect(cells[index].textContent).toMatch(/^\d{4}年\d{2}月\d{2}日 \d{2}:\d{2} · あと/);
+      expect(cells[index].firstElementChild).toHaveClass("whitespace-nowrap");
+    }
   });
 
   it("prompts for login when the account is signed out", () => {
-    renderAccount({ ...account, status: "signed-out", email: null, planType: null, windows: [] });
+    const { container } = renderAccount({ ...account, status: "signed-out", email: null, planType: null, windows: [] });
 
     expect(screen.getByText("ログインが必要です")).toBeInTheDocument();
+    const cells = within(container).getAllByRole("row")[1].querySelectorAll(":scope > th, :scope > td");
+    expect(cells).toHaveLength(3);
+    expect(cells[2]).toHaveAttribute("colspan", "4");
   });
 
   it("shows the time remaining until a usage window resets", () => {
@@ -259,7 +244,7 @@ describe("AccountUsageTable", () => {
     const card = within(container);
 
     expect(card.getAllByText("未使用")).toHaveLength(2);
-    expect(card.queryByText(/^リセット/)).not.toBeInTheDocument();
+    expect(card.queryByText(/\d{4}年\d{2}月\d{2}日/)).not.toBeInTheDocument();
     expect(card.queryByText(/^あと/)).not.toBeInTheDocument();
   });
 });

@@ -7,7 +7,6 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { ContextMenu as ContextMenuPrimitive } from "radix-ui";
 
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
 import type { AccountUsage } from "@/lib/accounts/account-usage";
 import type { UsageWindow } from "@/lib/codex/rate-limits";
 
@@ -24,23 +23,14 @@ type AccountUsageTableProps = {
   onDelete: (account: AccountUsage) => void;
 };
 
-function formatReset(resetsAt: number, durationMins: number) {
+function formatReset(resetsAt: number) {
   const date = new Date(resetsAt * 1000);
-  if (durationMins <= 24 * 60) {
-    return new Intl.DateTimeFormat("ja-JP", {
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: false,
-    }).format(date);
-  }
-  return new Intl.DateTimeFormat("ja-JP", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  }).format(date);
+  const parts = new Intl.DateTimeFormat("ja-JP", {
+    year: "numeric", month: "2-digit", day: "2-digit",
+    hour: "2-digit", minute: "2-digit", hour12: false,
+  }).formatToParts(date);
+  const value = (type: string) => parts.find((part) => part.type === type)?.value;
+  return `${value("year")}年${value("month")}月${value("day")}日 ${value("hour")}:${value("minute")}`;
 }
 
 export function formatTimeUntilReset(resetsAt: number, now: number) {
@@ -80,47 +70,29 @@ function AccountIdentity({ account }: { account: AccountUsage }) {
           {account.displayName || account.email || "認証中のアカウント"}
         </span>
       </div>
-      {account.planType ? (
-        <Badge variant="secondary" className="h-5 rounded-sm px-1.5 text-[10px] uppercase tracking-wider">
-          {account.planType}
-        </Badge>
-      ) : null}
     </div>
   );
 }
 
-function UsageWindowCell({ window, now }: { window?: UsageWindow; now: number }) {
+function UsageWindowCell({ window }: { window?: UsageWindow }) {
   if (!window) return <span className="text-sm text-muted-foreground">—</span>;
 
   return (
-    <div className="space-y-3">
-      <div className="flex items-baseline justify-end">
-        <p className="text-3xl font-semibold tabular-nums tracking-tight text-foreground">
-          {window.remainingPercent}<span className="ml-0.5 text-sm font-medium text-foreground/70">%</span>
-        </p>
-      </div>
-      <Progress
-        value={window.remainingPercent}
-        className="h-1.5 rounded-none bg-muted"
-        indicatorClassName={remainingProgressColor(window.remainingPercent)}
-        aria-label={`${window.label} ${window.remainingPercent}% 残り`}
-      />
-      {window.remainingPercent === 100 ? (
-        <p className="text-[13px] text-muted-foreground">未使用</p>
-      ) : (
-        <div className="flex items-center justify-between gap-3">
-          <p className="text-[13px] text-muted-foreground">
-            リセット{" "}
-            <span className="font-medium text-foreground/80">
-              {formatReset(window.resetsAt, window.windowDurationMins)}
-            </span>
-          </p>
-          <p className="shrink-0 text-[13px] font-medium text-foreground/80">
-            {formatTimeUntilReset(window.resetsAt, now)}
-          </p>
-        </div>
-      )}
+    <div className="flex items-center gap-2 whitespace-nowrap" aria-label={`${window.label} ${window.remainingPercent}% 残り`}>
+      <span data-slot="remaining-dot" aria-hidden="true" className={`size-2.5 shrink-0 rounded-full ${remainingProgressColor(window.remainingPercent)}`} />
+      <span className="text-xl font-semibold tabular-nums tracking-tight text-foreground">{window.remainingPercent}%</span>
     </div>
+  );
+}
+
+function ResetCell({ window, now }: { window?: UsageWindow; now: number }) {
+  if (!window) return <span className="text-sm text-muted-foreground">—</span>;
+  if (window.remainingPercent === 100) return <span className="text-[13px] text-muted-foreground">未使用</span>;
+
+  return (
+    <span className="whitespace-nowrap text-[13px] tabular-nums text-foreground/80">
+      {formatReset(window.resetsAt)} · {formatTimeUntilReset(window.resetsAt, now)}
+    </span>
   );
 }
 
@@ -268,17 +240,40 @@ export function AccountUsageTable({
         cell: ({ row }) => <AccountIdentity account={row.original} />,
       },
       {
+        id: "plan",
+        header: "プラン",
+        cell: ({ row }) => row.original.planType ? (
+          <Badge variant="secondary" className="h-5 rounded-sm px-1.5 text-[10px] uppercase tracking-wider">
+            {row.original.planType}
+          </Badge>
+        ) : null,
+      },
+      {
         id: "short-window",
         header: "5時間枠",
         cell: ({ row }) => row.original.status === "ready"
-          ? <UsageWindowCell window={windowsByAccount.get(row.original.id)?.[0]} now={now} />
+          ? <UsageWindowCell window={windowsByAccount.get(row.original.id)?.[0]} />
           : <AccountStatusMessage account={row.original} />,
+      },
+      {
+        id: "short-reset",
+        header: "リセット（5時間枠）",
+        cell: ({ row }) => row.original.status === "ready"
+          ? <ResetCell window={windowsByAccount.get(row.original.id)?.[0]} now={now} />
+          : null,
       },
       {
         id: "long-window",
         header: "週間枠",
         cell: ({ row }) => row.original.status === "ready"
-          ? <UsageWindowCell window={windowsByAccount.get(row.original.id)?.[1]} now={now} />
+          ? <UsageWindowCell window={windowsByAccount.get(row.original.id)?.[1]} />
+          : null,
+      },
+      {
+        id: "long-reset",
+        header: "リセット（週間枠）",
+        cell: ({ row }) => row.original.status === "ready"
+          ? <ResetCell window={windowsByAccount.get(row.original.id)?.[1]} now={now} />
           : null,
       },
     ],
@@ -313,9 +308,7 @@ export function AccountUsageTable({
                     <th
                       key={header.id}
                       scope="col"
-                      className={header.column.id === "account"
-                        ? "px-5 py-3 text-left font-medium"
-                        : "min-w-72 px-5 py-3 text-left font-medium"}
+                      className="px-5 py-3 text-left font-medium"
                     >
                       {header.isPlaceholder ? null : <table.FlexRender header={header} />}
                     </th>
@@ -332,11 +325,11 @@ export function AccountUsageTable({
                 >
                   {row.getAllCells().map((cell) => {
                     const columnId = cell.column.id;
-                    if (row.original.status !== "ready" && columnId === "long-window") return null;
+                    if (row.original.status !== "ready" && ["short-reset", "long-window", "long-reset"].includes(columnId)) return null;
 
                     const className = columnId === "account"
                       ? "px-5 py-4 text-left align-middle font-normal"
-                      : "min-w-72 px-5 py-4 align-middle";
+                      : "px-5 py-4 text-left align-middle";
 
                     if (columnId === "account") {
                       return (
@@ -349,7 +342,7 @@ export function AccountUsageTable({
                     return (
                       <td
                         key={cell.id}
-                        colSpan={columnId === "short-window" && row.original.status !== "ready" ? 2 : undefined}
+                        colSpan={columnId === "short-window" && row.original.status !== "ready" ? 4 : undefined}
                         className={className}
                       >
                         <table.FlexRender cell={cell} />
