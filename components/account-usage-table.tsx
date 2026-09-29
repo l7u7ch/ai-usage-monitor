@@ -335,8 +335,8 @@ export function AccountUsageTable({
                     if (row.original.status !== "ready" && columnId === "long-window") return null;
 
                     const className = columnId === "account"
-                      ? "px-5 py-6 text-left align-middle font-normal"
-                      : "min-w-56 px-5 py-6 align-middle";
+                      ? "px-5 py-4 text-left align-middle font-normal"
+                      : "min-w-56 px-5 py-4 align-middle";
 
                     if (columnId === "account") {
                       return (

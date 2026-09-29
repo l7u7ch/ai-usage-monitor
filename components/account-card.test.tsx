@@ -88,6 +88,15 @@ describe("AccountUsageTable", () => {
     expect(screen.getAllByRole("progressbar")).toHaveLength(2);
   });
 
+  it("uses compact vertical padding for account data cells", () => {
+    renderAccount();
+    const row = within(screen.getByRole("table")).getAllByRole("row")[1];
+    const cells = row.querySelectorAll(":scope > th, :scope > td");
+
+    expect(cells).toHaveLength(3);
+    cells.forEach((cell) => expect(cell).toHaveClass("py-4"));
+  });
+
   it("shows the ChatGPT logo before the account name", () => {
     const { container } = renderAccount();
     const card = within(container);
