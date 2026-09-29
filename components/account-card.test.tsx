@@ -1,8 +1,10 @@
-import { fireEvent, render, screen, within } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import { afterEach, describe, expect, it } from "vitest";
 
 import { AccountUsageTable, formatTimeUntilReset } from "@/components/account-usage-table";
 import type { AccountUsage } from "@/lib/accounts/account-usage";
+
+afterEach(cleanup);
 
 const account: AccountUsage = {
   id: "account-1",
@@ -48,6 +50,16 @@ function renderAccount(accountOverride: AccountUsage = account) {
 }
 
 describe("AccountUsageTable", () => {
+  it("sizes the table to its content while keeping horizontal overflow available", () => {
+    const { container } = renderAccount();
+    const table = within(container).getByRole("table");
+
+    expect(table.parentElement).toHaveClass("overflow-x-auto");
+    expect(table).toHaveClass("w-max", "table-auto");
+    expect(table).not.toHaveClass("w-full");
+    expect(within(table).getByRole("columnheader", { name: "Account" })).not.toHaveClass("min-w-64");
+  });
+
   it("renders one account as a quota matrix row", () => {
     renderAccount();
 

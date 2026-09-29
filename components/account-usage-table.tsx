@@ -299,7 +299,7 @@ export function AccountUsageTable({
 
   return (
     <div className="overflow-x-auto">
-      <table className="w-full table-auto border-collapse">
+      <table className="w-max table-auto border-collapse">
         <thead>
           {table.getHeaderGroups().map((headerGroup) => (
             <tr
@@ -312,7 +312,9 @@ export function AccountUsageTable({
                   scope="col"
                   className={header.column.id === "actions"
                     ? "w-16 px-3 py-3 text-right font-medium"
-                    : "min-w-64 px-5 py-3 text-left font-medium"}
+                    : header.column.id === "account"
+                      ? "px-5 py-3 text-left font-medium"
+                      : "min-w-56 px-5 py-3 text-left font-medium"}
                 >
                   {header.isPlaceholder ? null : <table.FlexRender header={header} />}
                 </th>
@@ -328,10 +330,10 @@ export function AccountUsageTable({
                 if (row.original.status !== "ready" && columnId === "long-window") return null;
 
                 const className = columnId === "account"
-                  ? "min-w-64 px-5 py-6 text-left align-middle font-normal"
+                  ? "px-5 py-6 text-left align-middle font-normal"
                   : columnId === "actions"
                     ? "px-3 py-6 text-right align-middle"
-                    : "min-w-64 px-5 py-6 align-middle";
+                    : "min-w-56 px-5 py-6 align-middle";
 
                 if (columnId === "account") {
                   return (

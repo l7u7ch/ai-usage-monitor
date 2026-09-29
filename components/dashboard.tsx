@@ -430,7 +430,7 @@ export function Dashboard({
 
       <main className="mx-auto min-h-[calc(100vh-4rem)] w-full max-w-[1500px] px-6 py-8 lg:px-10">
         {accounts.length ? (
-          <div className="overflow-hidden rounded-md border border-border/80 bg-card/30">
+          <div className="w-fit max-w-full overflow-hidden rounded-md border border-border/80 bg-card/30">
             <AccountUsageTable
               accounts={accounts}
               busyAccountId={actionPendingId}

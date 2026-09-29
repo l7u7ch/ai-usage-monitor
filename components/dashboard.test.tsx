@@ -72,7 +72,9 @@ describe("Dashboard", () => {
   it("uses automatic column sizing for account usage values", () => {
     render(<Dashboard initialAccounts={accounts} />);
 
-    expect(screen.getByRole("table")).toHaveClass("table-auto");
+    const table = screen.getByRole("table");
+    expect(table).toHaveClass("table-auto", "w-max");
+    expect(table.parentElement?.parentElement).toHaveClass("w-fit", "max-w-full");
   });
 
   it("links to the usage forecast from the account dashboard", () => {
