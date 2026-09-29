@@ -429,8 +429,8 @@ export function Dashboard({
       </Dialog>
 
       <main className="mx-auto min-h-[calc(100vh-4rem)] w-full max-w-[1500px] px-6 py-8 lg:px-10">
-        {accounts.length ? (
-          <div className="w-fit max-w-full overflow-hidden rounded-md border border-border/80 bg-card/30">
+        {accounts.length > 0 && (
+          <div className="mx-auto w-fit max-w-full overflow-hidden rounded-md border border-border/80 bg-card/30">
             <AccountUsageTable
               accounts={accounts}
               busyAccountId={actionPendingId}
@@ -446,13 +446,6 @@ export function Dashboard({
               }
               onDelete={setAccountToDelete}
             />
-          </div>
-        ) : (
-          <div className="rounded-xl border border-dashed px-6 py-16 text-center">
-            <p className="font-medium">アカウントがまだありません</p>
-            <p className="mt-1 text-sm text-muted-foreground">
-              アカウントを追加すると、Codexの利用枠がここに表示されます。
-            </p>
           </div>
         )}
       </main>

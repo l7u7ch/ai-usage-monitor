@@ -79,7 +79,15 @@ describe("Dashboard", () => {
 
     const table = screen.getByRole("table");
     expect(table).toHaveClass("table-auto", "w-max");
-    expect(table.parentElement?.parentElement).toHaveClass("w-fit", "max-w-full");
+    expect(table.parentElement?.parentElement).toHaveClass("mx-auto", "w-fit", "max-w-full");
+  });
+
+  it("leaves the dashboard empty without an account placeholder", () => {
+    render(<Dashboard initialAccounts={[]} />);
+
+    expect(screen.getByRole("main")).toBeEmptyDOMElement();
+    expect(screen.queryByText("アカウントがまだありません")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "アカウントを追加" })).toBeInTheDocument();
   });
 
   it("links to the usage forecast from the account dashboard", () => {
@@ -324,5 +332,6 @@ describe("Dashboard", () => {
       expect(fetchMock).toHaveBeenCalledWith("/api/accounts/account-1", { method: "DELETE" });
     });
     await waitFor(() => expect(screen.queryByText("me@example.com")).not.toBeInTheDocument());
+    expect(screen.getByRole("main")).toBeEmptyDOMElement();
   });
 });
