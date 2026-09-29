@@ -40,10 +40,15 @@ const twoAccounts = [
 ];
 
 function openAccountMenu(email = "me@example.com") {
-  fireEvent.pointerDown(screen.getByRole("button", { name: `${email}の操作` }), {
-    button: 0,
-    ctrlKey: false,
-    pointerType: "mouse",
+  const row = screen.getAllByRole("row").find((candidate) =>
+    candidate.textContent?.includes(email),
+  );
+  if (!row) throw new Error(`Could not find account row for ${email}`);
+
+  fireEvent.contextMenu(row, {
+    button: 2,
+    clientX: 100,
+    clientY: 100,
   });
 }
 

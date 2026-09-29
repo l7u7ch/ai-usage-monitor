@@ -49,6 +49,22 @@ function renderAccount(accountOverride: AccountUsage = account) {
   return renderAccounts([accountOverride]);
 }
 
+function getAccountRow(container: HTMLElement, email = "me@example.com") {
+  const row = within(container).getAllByRole("row").find((candidate) =>
+    candidate.textContent?.includes(email),
+  );
+  if (!row) throw new Error(`Could not find account row for ${email}`);
+  return row;
+}
+
+function openAccountContextMenu(container: HTMLElement, email = "me@example.com") {
+  fireEvent.contextMenu(getAccountRow(container, email), {
+    button: 2,
+    clientX: 100,
+    clientY: 100,
+  });
+}
+
 describe("AccountUsageTable", () => {
   it("sizes the table to its content while keeping horizontal overflow available", () => {
     const { container } = renderAccount();
@@ -92,13 +108,26 @@ describe("AccountUsageTable", () => {
     expect(card.queryByText("me@example.com")).not.toBeInTheDocument();
   });
 
+  it("opens row actions from the account context menu", async () => {
+    const { container } = renderAccount();
+    openAccountContextMenu(container);
+
+    const menu = within(await screen.findByRole("menu"));
+    expect(menu.getByRole("menuitem", { name: "ラベルを変更" })).toBeInTheDocument();
+  });
+
+  it("does not render a separate operations column", () => {
+    const { container } = renderAccount();
+    const table = within(container).getByRole("table");
+    const accountRow = getAccountRow(container);
+
+    expect(within(table).queryByRole("columnheader", { name: "操作" })).not.toBeInTheDocument();
+    expect(accountRow.querySelectorAll(":scope > th, :scope > td")).toHaveLength(3);
+  });
+
   it("shows icons for available actions and hides reauthentication", async () => {
     const { container } = renderAccount();
-    fireEvent.pointerDown(within(container).getByRole("button", { name: "me@example.comの操作" }), {
-      button: 0,
-      ctrlKey: false,
-      pointerType: "mouse",
-    });
+    openAccountContextMenu(container);
 
     const menu = within(await screen.findByRole("menu"));
     const rename = menu.getByRole("menuitem", { name: "ラベルを変更" });
@@ -112,11 +141,7 @@ describe("AccountUsageTable", () => {
   it("disables moving past either account-list boundary", async () => {
     const otherAccount = { ...account, id: "account-2", email: "other@example.com" };
     const { container, unmount } = renderAccounts([account, otherAccount]);
-    fireEvent.pointerDown(within(container).getByRole("button", { name: "me@example.comの操作" }), {
-      button: 0,
-      ctrlKey: false,
-      pointerType: "mouse",
-    });
+    openAccountContextMenu(container);
     const firstMenu = within(await screen.findByRole("menu"));
 
     expect(firstMenu.getByRole("menuitem", { name: "上へ移動" })).toHaveAttribute(
@@ -130,11 +155,7 @@ describe("AccountUsageTable", () => {
 
     unmount();
     const secondTable = renderAccounts([account, otherAccount]);
-    fireEvent.pointerDown(within(secondTable.container).getByRole("button", { name: "other@example.comの操作" }), {
-      button: 0,
-      ctrlKey: false,
-      pointerType: "mouse",
-    });
+    openAccountContextMenu(secondTable.container, "other@example.com");
     const secondMenu = within(await screen.findByRole("menu"));
 
     expect(secondMenu.getByRole("menuitem", { name: "上へ移動" })).not.toHaveAttribute(

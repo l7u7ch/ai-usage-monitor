@@ -1,13 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { AlertCircle, ArrowDown, ArrowUp, LoaderCircle, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
+import { useEffect, useMemo, useState, type MouseEvent } from "react";
+import { AlertCircle, ArrowDown, ArrowUp, Pencil, Trash2 } from "lucide-react";
 import { tableFeatures, useTable } from "@tanstack/react-table";
 import type { ColumnDef } from "@tanstack/react-table";
-import { DropdownMenu as DropdownMenuPrimitive } from "radix-ui";
+import { ContextMenu as ContextMenuPrimitive } from "radix-ui";
 
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import type { AccountUsage } from "@/lib/accounts/account-usage";
 import type { UsageWindow } from "@/lib/codex/rate-limits";
@@ -136,7 +135,7 @@ function AccountStatusMessage({ account }: { account: AccountUsage }) {
   );
 }
 
-function AccountActions({
+function AccountContextMenu({
   account,
   busy,
   canMoveUp,
@@ -161,65 +160,55 @@ function AccountActions({
   void onReauthenticate;
 
   return (
-    <DropdownMenuPrimitive.Root>
-      <DropdownMenuPrimitive.Trigger asChild>
-        <Button
-          variant="ghost"
-          size="icon"
-          aria-label={`${account.displayName || account.email || "ChatGPTアカウント"}の操作`}
+    <ContextMenuPrimitive.Portal>
+      <ContextMenuPrimitive.Content
+        aria-label={`${account.displayName || account.email || "ChatGPTアカウント"}の操作`}
+        className="z-50 min-w-40 rounded-md border bg-popover p-1 text-popover-foreground shadow-md"
+      >
+        <ContextMenuPrimitive.Item
+          disabled={busy || !canMoveUp}
+          className="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50"
+          onSelect={() => onMoveUp(account)}
+        >
+          <ArrowUp className="size-4 shrink-0" aria-hidden="true" />
+          上へ移動
+        </ContextMenuPrimitive.Item>
+        <ContextMenuPrimitive.Item
+          disabled={busy || !canMoveDown}
+          className="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50"
+          onSelect={() => onMoveDown(account)}
+        >
+          <ArrowDown className="size-4 shrink-0" aria-hidden="true" />
+          下へ移動
+        </ContextMenuPrimitive.Item>
+        <ContextMenuPrimitive.Item
           disabled={busy}
+          className="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50"
+          onSelect={() => onRename(account)}
         >
-          {busy ? <LoaderCircle className="animate-spin" /> : <MoreHorizontal />}
-        </Button>
-      </DropdownMenuPrimitive.Trigger>
-      <DropdownMenuPrimitive.Portal>
-        <DropdownMenuPrimitive.Content
-          align="end"
-          className="z-50 min-w-40 rounded-md border bg-popover p-1 text-popover-foreground shadow-md"
+          <Pencil className="size-4 shrink-0" aria-hidden="true" />
+          ラベルを変更
+        </ContextMenuPrimitive.Item>
+        {/* 一時的に非表示。再有効化するときはアクションを戻す。 */}
+        {/*
+        <ContextMenuPrimitive.Item
+          className="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none focus:bg-accent focus:text-accent-foreground"
+          onSelect={() => onReauthenticate(account)}
         >
-          <DropdownMenuPrimitive.Item
-            disabled={busy || !canMoveUp}
-            className="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50"
-            onSelect={() => onMoveUp(account)}
-          >
-            <ArrowUp className="size-4 shrink-0" aria-hidden="true" />
-            上へ移動
-          </DropdownMenuPrimitive.Item>
-          <DropdownMenuPrimitive.Item
-            disabled={busy || !canMoveDown}
-            className="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50"
-            onSelect={() => onMoveDown(account)}
-          >
-            <ArrowDown className="size-4 shrink-0" aria-hidden="true" />
-            下へ移動
-          </DropdownMenuPrimitive.Item>
-          <DropdownMenuPrimitive.Item
-            className="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none focus:bg-accent focus:text-accent-foreground"
-            onSelect={() => onRename(account)}
-          >
-            <Pencil className="size-4 shrink-0" aria-hidden="true" />
-            ラベルを変更
-          </DropdownMenuPrimitive.Item>
-          {/* 一時的に非表示。再有効化するときはアクションを戻す。 */}
-          {/*
-          <DropdownMenuPrimitive.Item
-            className="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none focus:bg-accent focus:text-accent-foreground"
-            onSelect={() => onReauthenticate(account)}
-          >
-            <LogIn className="size-4 shrink-0" aria-hidden="true" />
-            再ログイン
-          </DropdownMenuPrimitive.Item>
-          */}
-          <DropdownMenuPrimitive.Item
-            className="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 text-sm text-destructive outline-none focus:bg-accent focus:text-destructive"
-            onSelect={() => onDelete(account)}
-          >
-            <Trash2 className="size-4 shrink-0" aria-hidden="true" />
-            削除
-          </DropdownMenuPrimitive.Item>
-        </DropdownMenuPrimitive.Content>
-      </DropdownMenuPrimitive.Portal>
-    </DropdownMenuPrimitive.Root>
+          <LogIn className="size-4 shrink-0" aria-hidden="true" />
+          再ログイン
+        </ContextMenuPrimitive.Item>
+        */}
+        <ContextMenuPrimitive.Item
+          disabled={busy}
+          className="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 text-sm text-destructive outline-none focus:bg-accent focus:text-destructive data-[disabled]:pointer-events-none data-[disabled]:opacity-50"
+          onSelect={() => onDelete(account)}
+        >
+          <Trash2 className="size-4 shrink-0" aria-hidden="true" />
+          削除
+        </ContextMenuPrimitive.Item>
+      </ContextMenuPrimitive.Content>
+    </ContextMenuPrimitive.Portal>
   );
 }
 
@@ -234,6 +223,8 @@ export function AccountUsageTable({
   onDelete,
 }: AccountUsageTableProps) {
   const [now, setNow] = useState(() => Date.now());
+  const [contextMenuAccountId, setContextMenuAccountId] = useState<string | null>(null);
+  const [contextMenuOpen, setContextMenuOpen] = useState(false);
 
   useEffect(() => {
     const timer = window.setInterval(() => setNow(Date.now()), 60_000);
@@ -247,6 +238,27 @@ export function AccountUsageTable({
     ])),
     [accounts],
   );
+
+  const contextMenuAccountIndex = accounts.findIndex((account) => account.id === contextMenuAccountId);
+  const contextMenuAccount = contextMenuAccountIndex >= 0 ? accounts[contextMenuAccountIndex] : null;
+
+  function handleTableContextMenu(event: MouseEvent<HTMLTableElement>) {
+    const row = event.target instanceof Element
+      ? event.target.closest<HTMLTableRowElement>("tr[data-account-id]")
+      : null;
+    const account = row?.dataset.accountId
+      ? accounts.find((candidate) => candidate.id === row.dataset.accountId)
+      : undefined;
+
+    if (!account || busyAccountId === account.id || loginPending) {
+      event.preventDefault();
+      setContextMenuAccountId(null);
+      setContextMenuOpen(false);
+      return;
+    }
+
+    setContextMenuAccountId(account.id);
+  }
 
   const columns = useMemo<Array<ColumnDef<typeof accountTableFeatures, AccountUsage>>>(
     () => [
@@ -269,25 +281,8 @@ export function AccountUsageTable({
           ? <UsageWindowCell window={windowsByAccount.get(row.original.id)?.[1]} now={now} />
           : null,
       },
-      {
-        id: "actions",
-        header: "操作",
-        cell: ({ row }) => (
-          <AccountActions
-            account={row.original}
-            busy={busyAccountId === row.original.id || loginPending}
-            canMoveUp={row.index > 0}
-            canMoveDown={row.index < accounts.length - 1}
-            onMoveUp={onMoveUp}
-            onMoveDown={onMoveDown}
-            onRename={onRename}
-            onReauthenticate={onReauthenticate}
-            onDelete={onDelete}
-          />
-        ),
-      },
     ],
-    [accounts.length, busyAccountId, loginPending, now, onDelete, onMoveDown, onMoveUp, onReauthenticate, onRename, windowsByAccount],
+    [now, windowsByAccount],
   );
 
   const table = useTable({
@@ -298,65 +293,88 @@ export function AccountUsageTable({
   });
 
   return (
-    <div className="overflow-x-auto">
-      <table className="w-max table-auto border-collapse">
-        <thead>
-          {table.getHeaderGroups().map((headerGroup) => (
-            <tr
-              key={headerGroup.id}
-              className="border-b border-border/80 bg-muted/30 text-xs uppercase tracking-[0.12em] text-muted-foreground"
-            >
-              {headerGroup.headers.map((header) => (
-                <th
-                  key={header.id}
-                  scope="col"
-                  className={header.column.id === "actions"
-                    ? "w-16 px-3 py-3 text-right font-medium"
-                    : header.column.id === "account"
-                      ? "px-5 py-3 text-left font-medium"
-                      : "min-w-56 px-5 py-3 text-left font-medium"}
+    <ContextMenuPrimitive.Root
+      open={contextMenuOpen}
+      onOpenChange={(open) => {
+        setContextMenuOpen(open);
+        if (!open) setContextMenuAccountId(null);
+      }}
+    >
+      <div className="overflow-x-auto">
+        <ContextMenuPrimitive.Trigger asChild>
+          <table className="w-max table-auto border-collapse" onContextMenu={handleTableContextMenu}>
+            <thead>
+              {table.getHeaderGroups().map((headerGroup) => (
+                <tr
+                  key={headerGroup.id}
+                  className="border-b border-border/80 bg-muted/30 text-xs uppercase tracking-[0.12em] text-muted-foreground"
                 >
-                  {header.isPlaceholder ? null : <table.FlexRender header={header} />}
-                </th>
-              ))}
-            </tr>
-          ))}
-        </thead>
-        <tbody>
-          {table.getRowModel().rows.map((row) => (
-            <tr key={row.id} className="border-b border-border/70 last:border-0">
-              {row.getAllCells().map((cell) => {
-                const columnId = cell.column.id;
-                if (row.original.status !== "ready" && columnId === "long-window") return null;
-
-                const className = columnId === "account"
-                  ? "px-5 py-6 text-left align-middle font-normal"
-                  : columnId === "actions"
-                    ? "px-3 py-6 text-right align-middle"
-                    : "min-w-56 px-5 py-6 align-middle";
-
-                if (columnId === "account") {
-                  return (
-                    <th key={cell.id} scope="row" className={className}>
-                      <table.FlexRender cell={cell} />
+                  {headerGroup.headers.map((header) => (
+                    <th
+                      key={header.id}
+                      scope="col"
+                      className={header.column.id === "account"
+                        ? "px-5 py-3 text-left font-medium"
+                        : "min-w-56 px-5 py-3 text-left font-medium"}
+                    >
+                      {header.isPlaceholder ? null : <table.FlexRender header={header} />}
                     </th>
-                  );
-                }
+                  ))}
+                </tr>
+              ))}
+            </thead>
+            <tbody>
+              {table.getRowModel().rows.map((row) => (
+                <tr
+                  key={row.id}
+                  data-account-id={row.original.id}
+                  className="border-b border-border/70 last:border-0"
+                >
+                  {row.getAllCells().map((cell) => {
+                    const columnId = cell.column.id;
+                    if (row.original.status !== "ready" && columnId === "long-window") return null;
 
-                return (
-                  <td
-                    key={cell.id}
-                    colSpan={columnId === "short-window" && row.original.status !== "ready" ? 2 : undefined}
-                    className={className}
-                  >
-                    <table.FlexRender cell={cell} />
-                  </td>
-                );
-              })}
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+                    const className = columnId === "account"
+                      ? "px-5 py-6 text-left align-middle font-normal"
+                      : "min-w-56 px-5 py-6 align-middle";
+
+                    if (columnId === "account") {
+                      return (
+                        <th key={cell.id} scope="row" className={className}>
+                          <table.FlexRender cell={cell} />
+                        </th>
+                      );
+                    }
+
+                    return (
+                      <td
+                        key={cell.id}
+                        colSpan={columnId === "short-window" && row.original.status !== "ready" ? 2 : undefined}
+                        className={className}
+                      >
+                        <table.FlexRender cell={cell} />
+                      </td>
+                    );
+                  })}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </ContextMenuPrimitive.Trigger>
+      </div>
+      {contextMenuAccount ? (
+        <AccountContextMenu
+          account={contextMenuAccount}
+          busy={busyAccountId === contextMenuAccount.id || loginPending}
+          canMoveUp={contextMenuAccountIndex > 0}
+          canMoveDown={contextMenuAccountIndex < accounts.length - 1}
+          onMoveUp={onMoveUp}
+          onMoveDown={onMoveDown}
+          onRename={onRename}
+          onReauthenticate={onReauthenticate}
+          onDelete={onDelete}
+        />
+      ) : null}
+    </ContextMenuPrimitive.Root>
   );
 }
