@@ -309,9 +309,6 @@ export function Dashboard({
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-3">
-            {/* <Button asChild variant="outline"> */}
-            {/* <Link href="/usage">利用ペース予測</Link> */}
-            {/* </Button> */}
             <div className="flex gap-2">
               <Button
                 variant="outline"

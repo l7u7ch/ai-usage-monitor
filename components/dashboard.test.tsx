@@ -90,10 +90,12 @@ describe("Dashboard", () => {
     expect(screen.getByRole("button", { name: "アカウントを追加" })).toBeInTheDocument();
   });
 
-  it("links to the usage forecast from the account dashboard", () => {
+  it("does not link to the usage forecast from the account dashboard", () => {
     render(<Dashboard initialAccounts={accounts} />);
 
-    expect(screen.getByRole("link", { name: "利用ペース予測" })).toHaveAttribute("href", "/usage");
+    expect(
+      screen.queryByRole("link", { name: "利用ペース予測" }),
+    ).not.toBeInTheDocument();
   });
 
   it("asks for confirmation before logging out", async () => {
