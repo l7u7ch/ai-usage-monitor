@@ -65,7 +65,7 @@ describe("Dashboard", () => {
 
     expect(screen.getByRole("button", { name: "アカウントを追加" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "更新" })).toBeInTheDocument();
-    expect(screen.getByRole("columnheader", { name: "Account" })).toBeInTheDocument();
+    expect(screen.getByRole("columnheader", { name: "アカウント" })).toBeInTheDocument();
     expect(screen.getByRole("columnheader", { name: "5時間枠" })).toBeInTheDocument();
     expect(screen.getByRole("columnheader", { name: "週間枠" })).toBeInTheDocument();
     expect(screen.getByText("me@example.com")).toBeInTheDocument();

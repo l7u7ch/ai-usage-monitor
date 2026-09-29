@@ -73,7 +73,7 @@ describe("AccountUsageTable", () => {
     expect(table.parentElement).toHaveClass("overflow-x-auto");
     expect(table).toHaveClass("w-max", "table-auto");
     expect(table).not.toHaveClass("w-full");
-    expect(within(table).getByRole("columnheader", { name: "Account" })).not.toHaveClass("min-w-64");
+    expect(within(table).getByRole("columnheader", { name: "アカウント" })).not.toHaveClass("min-w-64");
   });
 
   it("renders one account as a quota matrix row", () => {

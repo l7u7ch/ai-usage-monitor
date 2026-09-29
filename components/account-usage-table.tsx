@@ -264,7 +264,7 @@ export function AccountUsageTable({
     () => [
       {
         id: "account",
-        header: "Account",
+        header: "アカウント",
         cell: ({ row }) => <AccountIdentity account={row.original} />,
       },
       {
