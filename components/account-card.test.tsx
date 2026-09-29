@@ -1,10 +1,13 @@
 import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { AccountUsageTable, formatTimeUntilReset } from "@/components/account-usage-table";
+import { AccountUsageTable, formatReset, formatTimeUntilReset } from "@/components/account-usage-table";
 import type { AccountUsage } from "@/lib/accounts/account-usage";
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  vi.useRealTimers();
+});
 
 const account: AccountUsage = {
   id: "account-1",
@@ -204,21 +207,29 @@ describe("AccountUsageTable", () => {
     expect(container.querySelector('[data-slot="remaining-dot"]')).toHaveClass(colorClass);
   });
 
-  it("left-aligns the smaller dot and percentage in the usage cell", () => {
+  it("uses the same text size, weight and color across the row", () => {
     const { container } = renderAccount();
     const percentage = within(container).getByText("72%");
     expect(percentage.parentElement).toHaveClass("flex", "items-center");
-    expect(percentage).toHaveClass("text-xl");
+    expect(percentage).toHaveClass("text-sm", "font-normal", "text-foreground");
     expect(percentage.previousElementSibling).toHaveAttribute("data-slot", "remaining-dot");
+    expect(within(container).getByText("me@example.com")).toHaveClass("font-normal", "text-foreground");
+    const cells = getAccountRow(container).querySelectorAll(":scope > th, :scope > td");
+    expect(cells[0].parentElement?.parentElement).toHaveClass("text-sm", "text-foreground");
+    for (const index of [3, 5]) {
+      expect(cells[index].firstElementChild).toHaveClass("text-sm", "font-normal", "text-foreground");
+    }
   });
 
-  it("shows the full reset date and remaining time on one line in separate cells", () => {
+  it("shows the relative reset date and remaining time on one line in separate cells", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2027, 0, 1, 12, 0));
     const { container } = renderAccount();
     const cells = getAccountRow(container).querySelectorAll(":scope > th, :scope > td");
     expect(cells[2]).toHaveTextContent("72%");
     expect(cells[4]).toHaveTextContent("41%");
     for (const index of [3, 5]) {
-      expect(cells[index].textContent).toMatch(/^\d{4}年\d{2}月\d{2}日 \d{2}:\d{2} · あと/);
+      expect(cells[index].textContent).toMatch(/^\d{2}月\d{2}日 \d{2}:\d{2} · あと/);
       expect(cells[index].firstElementChild).toHaveClass("whitespace-nowrap");
     }
   });
@@ -234,6 +245,24 @@ describe("AccountUsageTable", () => {
 
   it("shows the time remaining until a usage window resets", () => {
     expect(formatTimeUntilReset(1_800_000_000, 1_799_999_700_000)).toBe("あと5分");
+  });
+
+  it("shows only the time for a reset on the same local day", () => {
+    const now = new Date(2026, 8, 30, 9, 0).getTime();
+    const reset = new Date(2026, 8, 30, 12, 45).getTime() / 1000;
+    expect(formatReset(reset, now)).toBe("12:45");
+  });
+
+  it("shows the month and day after crossing midnight within the same year", () => {
+    const now = new Date(2026, 8, 30, 23, 50).getTime();
+    const reset = new Date(2026, 9, 1, 0, 10).getTime() / 1000;
+    expect(formatReset(reset, now)).toBe("10月01日 00:10");
+  });
+
+  it("shows the year when the reset crosses into another year", () => {
+    const now = new Date(2026, 11, 31, 23, 50).getTime();
+    const reset = new Date(2027, 0, 1, 0, 10).getTime() / 1000;
+    expect(formatReset(reset, now)).toBe("2027年01月01日 00:10");
   });
 
   it("shows unused instead of reset details for fully available windows", () => {
