@@ -76,6 +76,21 @@ describe("AccountUsageTable", () => {
     expect(within(table).getByRole("columnheader", { name: "アカウント" })).not.toHaveClass("min-w-64");
   });
 
+  it("gives both usage columns a 288px minimum width", () => {
+    const { container } = renderAccount();
+    const table = within(container).getByRole("table");
+    const headers = within(table).getAllByRole("columnheader");
+    const row = within(table).getAllByRole("row")[1];
+    const cells = row.querySelectorAll(":scope > th, :scope > td");
+
+    expect(cells).toHaveLength(3);
+    expect(headers[1]).toHaveClass("min-w-72");
+    expect(headers[2]).toHaveClass("min-w-72");
+    expect(cells[1]).toHaveClass("min-w-72");
+    expect(cells[2]).toHaveClass("min-w-72");
+    expect(cells[0]).not.toHaveClass("min-w-72");
+  });
+
   it("renders one account as a quota matrix row", () => {
     renderAccount();
 

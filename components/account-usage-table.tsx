@@ -315,7 +315,7 @@ export function AccountUsageTable({
                       scope="col"
                       className={header.column.id === "account"
                         ? "px-5 py-3 text-left font-medium"
-                        : "min-w-56 px-5 py-3 text-left font-medium"}
+                        : "min-w-72 px-5 py-3 text-left font-medium"}
                     >
                       {header.isPlaceholder ? null : <table.FlexRender header={header} />}
                     </th>
@@ -336,7 +336,7 @@ export function AccountUsageTable({
 
                     const className = columnId === "account"
                       ? "px-5 py-4 text-left align-middle font-normal"
-                      : "min-w-56 px-5 py-4 align-middle";
+                      : "min-w-72 px-5 py-4 align-middle";
 
                     if (columnId === "account") {
                       return (
