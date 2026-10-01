@@ -332,15 +332,21 @@ export function Dashboard({
                 onClick={() => void refresh()}
                 size="sm"
                 disabled={refreshing}
-                className="w-[104px] disabled:opacity-100"
+                className={refreshing
+                  ? "disabled:opacity-100 border-blue-500/40 bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 hover:text-blue-400 dark:border-blue-500/40 dark:bg-blue-500/10 dark:hover:bg-blue-500/20"
+                  : refreshResult === "success"
+                    ? "border-green-500/40 bg-green-500/10 text-green-400 hover:bg-green-500/20 hover:text-green-400 dark:border-green-500/40 dark:bg-green-500/10 dark:hover:bg-green-500/20"
+                    : refreshResult === "error"
+                      ? "border-red-500/40 bg-red-500/10 text-red-400 hover:bg-red-500/20 hover:text-red-400 dark:border-red-500/40 dark:bg-red-500/10 dark:hover:bg-red-500/20"
+                      : undefined}
                 aria-busy={refreshing}
               >
                 {refreshing ? (
-                  <RefreshCw className="animate-spin text-blue-400" />
+                  <RefreshCw className="animate-spin" />
                 ) : refreshResult === "success" ? (
-                  <Check className="text-green-400" />
+                  <Check />
                 ) : refreshResult === "error" ? (
-                  <CircleAlert className="text-red-400" />
+                  <CircleAlert />
                 ) : (
                   <RefreshCw />
                 )}
@@ -359,7 +365,7 @@ export function Dashboard({
                 ) : (
                   <Plus />
                 )}
-                アカウントを追加
+                追加
               </Button>
             </div>
             <div>

@@ -62,24 +62,27 @@ describe("Dashboard", () => {
     fireEvent.click(screen.getByRole("button", { name: "更新" }));
     const pending = screen.getByRole("button", { name: "更新中" });
     expect(pending).toBeDisabled();
-    expect(pending.querySelector("svg")).toHaveClass("text-blue-400", "animate-spin");
+    expect(pending).toHaveClass("bg-blue-500/10", "text-blue-400", "border-blue-500/40");
+    expect(pending.querySelector("svg")).toHaveClass("animate-spin");
     resolveRequest({ ok: true, json: async () => ({ accounts }) });
     const success = await screen.findByRole("button", { name: "更新完了" });
-    expect(success.querySelector("svg")).toHaveClass("text-green-400");
+    expect(success).toHaveClass("bg-green-500/10", "text-green-400", "border-green-500/40");
     await screen.findByRole("button", { name: "更新" }, { timeout: 4000 });
     fetchMock.mockRejectedValueOnce(new Error("offline"));
     fireEvent.click(screen.getByRole("button", { name: "更新" }));
     const failed = await screen.findByRole("button", { name: "更新失敗" });
-    expect(failed.querySelector("svg")).toHaveClass("text-red-400");
+    expect(failed).toHaveClass("bg-red-500/10", "text-red-400", "border-red-500/40");
     expect(failed).not.toBeDisabled();
   });
 
-  it("uses compact neutral header buttons without a separator", () => {
+  it("uses matching neutral compact header buttons when idle", () => {
     render(<Dashboard initialAccounts={accounts} />);
-    for (const name of ["更新", "アカウントを追加", "ログアウト"]) {
+    for (const name of ["更新", "追加", "ログアウト"]) {
       const button = screen.getByRole("button", { name });
       expect(button).toHaveAttribute("data-variant", "outline");
       expect(button).toHaveAttribute("data-size", "sm");
+      expect(button).not.toHaveClass("w-[104px]");
+      expect(button).toHaveClass("has-[>svg]:px-2.5");
     }
     expect(screen.getByRole("banner").querySelector(".border-l")).toBeNull();
   });
@@ -110,7 +113,7 @@ describe("Dashboard", () => {
   it("shows all registered accounts and account controls without a summary footer", () => {
     render(<Dashboard initialAccounts={accounts} />);
 
-    expect(screen.getByRole("button", { name: "アカウントを追加" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "追加" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "更新" })).toBeInTheDocument();
     expect(screen.getByRole("columnheader", { name: "アカウント" })).toBeInTheDocument();
     expect(screen.getByRole("columnheader", { name: "5時間枠" })).toBeInTheDocument();
@@ -134,7 +137,7 @@ describe("Dashboard", () => {
 
     expect(screen.getByRole("main")).toBeEmptyDOMElement();
     expect(screen.queryByText("アカウントがまだありません")).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "アカウントを追加" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "追加" })).toBeInTheDocument();
   });
 
   it("does not link to the usage forecast from the account dashboard", () => {
@@ -175,7 +178,7 @@ describe("Dashboard", () => {
     );
 
     render(<Dashboard initialAccounts={accounts} />);
-    fireEvent.click(screen.getByRole("button", { name: "アカウントを追加" }));
+    fireEvent.click(screen.getByRole("button", { name: "追加" }));
 
     await waitFor(() => expect(replaceMock).toHaveBeenCalledWith("/login"));
   });
@@ -193,7 +196,7 @@ describe("Dashboard", () => {
     vi.stubGlobal("fetch", fetchMock);
 
     render(<Dashboard initialAccounts={accounts} />);
-    fireEvent.click(screen.getByRole("button", { name: "アカウントを追加" }));
+    fireEvent.click(screen.getByRole("button", { name: "追加" }));
 
     await waitFor(() => {
       expect(fetchMock).toHaveBeenCalledWith("/api/accounts", {
@@ -227,7 +230,7 @@ describe("Dashboard", () => {
     );
 
     render(<Dashboard initialAccounts={accounts} />);
-    fireEvent.click(screen.getByRole("button", { name: "アカウントを追加" }));
+    fireEvent.click(screen.getByRole("button", { name: "追加" }));
     await screen.findByText("認証コード");
     fireEvent.click(screen.getByRole("button", { name: "認証コードをコピー" }));
 
@@ -252,7 +255,7 @@ describe("Dashboard", () => {
     vi.stubGlobal("fetch", fetchMock);
 
     render(<Dashboard initialAccounts={accounts} />);
-    fireEvent.click(screen.getByRole("button", { name: "アカウントを追加" }));
+    fireEvent.click(screen.getByRole("button", { name: "追加" }));
     await screen.findByText("認証コード");
     fireEvent.click(screen.getByRole("button", { name: "Close" }));
 
@@ -284,7 +287,7 @@ describe("Dashboard", () => {
     vi.stubGlobal("fetch", fetchMock);
 
     render(<Dashboard initialAccounts={accounts} />);
-    fireEvent.click(screen.getByRole("button", { name: "アカウントを追加" }));
+    fireEvent.click(screen.getByRole("button", { name: "追加" }));
     await screen.findByText("認証コード");
     await new Promise((resolve) => window.setTimeout(resolve, 1_600));
 
