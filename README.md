@@ -12,6 +12,8 @@ On the first visit, the application redirects to `/setup` to create the administ
 
 ## Dashboard login session
 
-Dashboard sessions expire 8 hours after a successful login or initial setup. This is an absolute lifetime: activity does not extend the session. If a protected API reports an expired session, the account dashboard redirects to `/login`; the usage dashboard stops polling and prompts the user to sign in again there. Codex account authorization is separate.
+Dashboard sessions initially expire 12 hours after a successful login or initial setup. On the account and usage dashboards, genuine pointer, keyboard, wheel, or touch input renews the session to 12 hours after that interaction. Automatic polling, page mounting, focus changes, and synthetic events do not renew it. Renewal requests are limited to one every 30 seconds per mounted page, with a trailing request preserving the latest interaction time rather than extending from the later request time. Cookie expiry and signed token expiry use that same deadline.
+
+The renewal endpoint requires a valid, unexpired session and a matching Origin, including behind a TLS-terminating proxy. Expired sessions cannot be revived; a renewal response of 401 redirects to `/login`. Activity timestamps must be within the preceding 60 seconds of the server clock, so keep client and server clocks synchronized. Network failures do not trigger automatic retries; later genuine input can try again while the session remains valid. Existing sessions retain their original expiry until a successful renewal. Codex account authorization is separate.
 
 `data/` is intentionally excluded from Git. Do not set `CODEX_USAGE_DATA_DIR`; the application always uses `/app/data` when run from the application root.

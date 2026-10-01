@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
+import { SessionActivity } from "@/components/session-activity";
 
 export const metadata: Metadata = {
   title: "AI Usage Monitor",
@@ -21,6 +22,7 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
   return (
     <html lang="ja" className="dark">
       <body>
+        <SessionActivity />
         {children}
         <Toaster richColors position="bottom-right" />
       </body>

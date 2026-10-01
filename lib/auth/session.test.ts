@@ -25,6 +25,12 @@ describe("session authentication", () => {
     expect(isValidSession(token, auth)).toBe(true);
     expect(isValidSession(`${token}tampered`, auth)).toBe(false);
   });
+  it("rejects extra token segments and non-ASCII signatures without throwing", () => {
+    const token = createSession(auth);
+    expect(isValidSession(`${token}.junk`, auth)).toBe(false);
+    const expiresAt = token.split(".")[0];
+    expect(isValidSession(`${expiresAt}.${"é".repeat(43)}`, auth)).toBe(false);
+  });
 
   it("validates a session in a fresh server module context", async () => {
     const { createSession: createSessionInLoginRoute } = await import("@/lib/auth/session");
@@ -41,7 +47,10 @@ describe("session authentication", () => {
     vi.useFakeTimers();
     const token = createSession(auth);
 
-    vi.advanceTimersByTime(8 * 60 * 60 * 1_000 + 1);
+    expect(Number(token.split(".")[0]) - Date.now()).toBe(12 * 60 * 60 * 1_000);
+    vi.advanceTimersByTime(12 * 60 * 60 * 1_000 - 1);
+    expect(isValidSession(token, auth)).toBe(true);
+    vi.advanceTimersByTime(1);
     expect(isValidSession(token, auth)).toBe(false);
 
     vi.useRealTimers();
