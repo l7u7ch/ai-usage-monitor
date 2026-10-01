@@ -1,5 +1,6 @@
 import {
   cleanup,
+  act,
   fireEvent,
   render,
   screen,
@@ -53,6 +54,52 @@ function openAccountMenu(email = "me@example.com") {
 }
 
 describe("Dashboard", () => {
+  it("shows manual refresh progress, success and failure", async () => {
+    let resolveRequest!: (value: unknown) => void;
+    const fetchMock = vi.fn().mockImplementationOnce(() => new Promise((resolve) => { resolveRequest = resolve; }));
+    vi.stubGlobal("fetch", fetchMock);
+    render(<Dashboard initialAccounts={accounts} />);
+    fireEvent.click(screen.getByRole("button", { name: "更新" }));
+    const pending = screen.getByRole("button", { name: "更新中" });
+    expect(pending).toBeDisabled();
+    expect(pending.querySelector("svg")).toHaveClass("text-blue-400", "animate-spin");
+    resolveRequest({ ok: true, json: async () => ({ accounts }) });
+    const success = await screen.findByRole("button", { name: "更新完了" });
+    expect(success.querySelector("svg")).toHaveClass("text-green-400");
+    await screen.findByRole("button", { name: "更新" }, { timeout: 4000 });
+    fetchMock.mockRejectedValueOnce(new Error("offline"));
+    fireEvent.click(screen.getByRole("button", { name: "更新" }));
+    const failed = await screen.findByRole("button", { name: "更新失敗" });
+    expect(failed.querySelector("svg")).toHaveClass("text-red-400");
+    expect(failed).not.toBeDisabled();
+  });
+
+  it("uses compact neutral header buttons without a separator", () => {
+    render(<Dashboard initialAccounts={accounts} />);
+    for (const name of ["更新", "アカウントを追加", "ログアウト"]) {
+      const button = screen.getByRole("button", { name });
+      expect(button).toHaveAttribute("data-variant", "outline");
+      expect(button).toHaveAttribute("data-size", "sm");
+    }
+    expect(screen.getByRole("banner").querySelector(".border-l")).toBeNull();
+  });
+
+  it("keeps manual failure feedback when quiet polling succeeds", async () => {
+    vi.useFakeTimers();
+    const fetchMock = vi.fn()
+      .mockRejectedValueOnce(new Error("offline"))
+      .mockResolvedValue({ ok: true, json: async () => ({ accounts }) });
+    vi.stubGlobal("fetch", fetchMock);
+    render(<Dashboard initialAccounts={accounts} />);
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "更新" }));
+    });
+    expect(screen.getByRole("button", { name: "更新失敗" })).toBeInTheDocument();
+    await act(async () => { await vi.advanceTimersByTimeAsync(60_000); });
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(screen.getByRole("button", { name: "更新失敗" })).toBeInTheDocument();
+  });
+
   afterEach(() => {
     cleanup();
     vi.useRealTimers();

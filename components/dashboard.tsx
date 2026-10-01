@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Copy, LoaderCircle, LogOut, Plus, RefreshCw } from "lucide-react";
+import { Check, CircleAlert, Copy, LoaderCircle, LogOut, Plus, RefreshCw } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
@@ -34,6 +34,8 @@ export function Dashboard({
   const router = useRouter();
   const [accounts, setAccounts] = useState(initialAccounts);
   const [refreshing, setRefreshing] = useState(false);
+  const [refreshResult, setRefreshResult] = useState<"idle" | "success" | "error">("idle");
+  const refreshFeedbackTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
@@ -64,18 +66,33 @@ export function Dashboard({
   );
 
   const refresh = useCallback(async (quiet = false) => {
-    if (!quiet) setRefreshing(true);
+    if (!quiet) {
+      if (refreshFeedbackTimer.current) clearTimeout(refreshFeedbackTimer.current);
+      setRefreshResult("idle");
+      setRefreshing(true);
+    }
     try {
       const response = await fetchAuthenticated("/api/accounts", { cache: "no-store" });
       if (!response.ok) throw new Error("request failed");
       const body = (await response.json()) as { accounts: AccountUsage[] };
       setAccounts(body.accounts);
+      if (!quiet) {
+        setRefreshResult("success");
+        refreshFeedbackTimer.current = setTimeout(() => setRefreshResult("idle"), 2000);
+      }
     } catch {
-      if (!quiet) toast.error("利用状況を更新できませんでした");
+      if (!quiet) {
+        setRefreshResult("error");
+        toast.error("利用状況を更新できませんでした");
+      }
     } finally {
       if (!quiet) setRefreshing(false);
     }
   }, [fetchAuthenticated]);
+
+  useEffect(() => () => {
+    if (refreshFeedbackTimer.current) clearTimeout(refreshFeedbackTimer.current);
+  }, []);
 
   useEffect(() => {
     const timer = window.setInterval(() => void refresh(true), 60_000);
@@ -308,18 +325,33 @@ export function Dashboard({
               AI Usage Monitor
             </p>
           </div>
-          <div className="flex flex-wrap items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2">
             <div className="flex gap-2">
               <Button
                 variant="outline"
                 onClick={() => void refresh()}
+                size="sm"
                 disabled={refreshing}
+                className="w-[104px] disabled:opacity-100"
+                aria-busy={refreshing}
               >
-                <RefreshCw className={refreshing ? "animate-spin" : ""} />
-                更新
+                {refreshing ? (
+                  <RefreshCw className="animate-spin text-blue-400" />
+                ) : refreshResult === "success" ? (
+                  <Check className="text-green-400" />
+                ) : refreshResult === "error" ? (
+                  <CircleAlert className="text-red-400" />
+                ) : (
+                  <RefreshCw />
+                )}
+                <span aria-live="polite">
+                  {refreshing ? "更新中" : refreshResult === "success" ? "更新完了" : refreshResult === "error" ? "更新失敗" : "更新"}
+                </span>
               </Button>
               <Button
                 onClick={() => void addAccount()}
+                variant="outline"
+                size="sm"
                 disabled={submitting || Boolean(login)}
               >
                 {submitting ? (
@@ -330,10 +362,11 @@ export function Dashboard({
                 アカウントを追加
               </Button>
             </div>
-            <div className="border-l pl-4">
+            <div>
               <Button
                 variant="outline"
                 onClick={() => setLogoutDialogOpen(true)}
+                size="sm"
                 disabled={loggingOut}
               >
                 {loggingOut ? (
