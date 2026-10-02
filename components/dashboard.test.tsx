@@ -62,7 +62,7 @@ describe("Dashboard", () => {
     fireEvent.click(screen.getByRole("button", { name: "更新" }));
     const pending = screen.getByRole("button", { name: "更新中" });
     expect(pending).toBeDisabled();
-    expect(pending).toHaveClass("bg-blue-500/10", "text-blue-400", "border-blue-500/40");
+    expect(pending).toHaveClass("bg-blue-600", "text-white", "border-blue-600", "disabled:opacity-100", "dark:bg-blue-600", "hover:text-white");
     expect(pending.querySelector("svg")).toHaveClass("animate-spin");
     resolveRequest({ ok: true, json: async () => ({ accounts }) });
     const success = await screen.findByRole("button", { name: "更新完了" });

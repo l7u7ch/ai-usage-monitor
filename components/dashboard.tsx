@@ -333,7 +333,7 @@ export function Dashboard({
                 size="sm"
                 disabled={refreshing}
                 className={refreshing
-                  ? "disabled:opacity-100 border-blue-500/40 bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 hover:text-blue-400 dark:border-blue-500/40 dark:bg-blue-500/10 dark:hover:bg-blue-500/20"
+                  ? "disabled:opacity-100 border-blue-600 bg-blue-600 text-white hover:bg-blue-700 hover:text-white dark:border-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700"
                   : refreshResult === "success"
                     ? "border-green-500/40 bg-green-500/10 text-green-400 hover:bg-green-500/20 hover:text-green-400 dark:border-green-500/40 dark:bg-green-500/10 dark:hover:bg-green-500/20"
                     : refreshResult === "error"
