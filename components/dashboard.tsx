@@ -335,9 +335,9 @@ export function Dashboard({
                 className={refreshing
                   ? "disabled:opacity-100 border-blue-600 bg-blue-600 text-white hover:bg-blue-700 hover:text-white dark:border-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700"
                   : refreshResult === "success"
-                    ? "border-green-500/40 bg-green-500/10 text-green-400 hover:bg-green-500/20 hover:text-green-400 dark:border-green-500/40 dark:bg-green-500/10 dark:hover:bg-green-500/20"
+                    ? "border-green-700 bg-green-700 text-white hover:bg-green-800 hover:text-white dark:border-green-700 dark:bg-green-700 dark:hover:bg-green-800"
                     : refreshResult === "error"
-                      ? "border-red-500/40 bg-red-500/10 text-red-400 hover:bg-red-500/20 hover:text-red-400 dark:border-red-500/40 dark:bg-red-500/10 dark:hover:bg-red-500/20"
+                      ? "border-red-600 bg-red-600 text-white hover:bg-red-700 hover:text-white dark:border-red-600 dark:bg-red-600 dark:hover:bg-red-700"
                       : undefined}
                 aria-busy={refreshing}
               >

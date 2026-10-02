@@ -66,12 +66,12 @@ describe("Dashboard", () => {
     expect(pending.querySelector("svg")).toHaveClass("animate-spin");
     resolveRequest({ ok: true, json: async () => ({ accounts }) });
     const success = await screen.findByRole("button", { name: "更新完了" });
-    expect(success).toHaveClass("bg-green-500/10", "text-green-400", "border-green-500/40");
+    expect(success).toHaveClass("bg-green-700", "text-white", "border-green-700", "hover:text-white", "dark:bg-green-700", "dark:hover:bg-green-800");
     await screen.findByRole("button", { name: "更新" }, { timeout: 4000 });
     fetchMock.mockRejectedValueOnce(new Error("offline"));
     fireEvent.click(screen.getByRole("button", { name: "更新" }));
     const failed = await screen.findByRole("button", { name: "更新失敗" });
-    expect(failed).toHaveClass("bg-red-500/10", "text-red-400", "border-red-500/40");
+    expect(failed).toHaveClass("bg-red-600", "text-white", "border-red-600", "hover:text-white", "dark:bg-red-600", "dark:hover:bg-red-700");
     expect(failed).not.toBeDisabled();
   });
 
