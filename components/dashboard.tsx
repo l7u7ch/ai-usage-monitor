@@ -28,11 +28,14 @@ type LoginPrompt = {
 
 export function Dashboard({
   initialAccounts,
+  initialUpdatedAt = null,
 }: {
   initialAccounts: AccountUsage[];
+  initialUpdatedAt?: string | null;
 }) {
   const router = useRouter();
   const [accounts, setAccounts] = useState(initialAccounts);
+  const [updatedAt, setUpdatedAt] = useState(initialUpdatedAt);
   const [refreshing, setRefreshing] = useState(false);
   const [refreshResult, setRefreshResult] = useState<"idle" | "success" | "error">("idle");
   const refreshFeedbackTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -76,6 +79,7 @@ export function Dashboard({
       if (!response.ok) throw new Error("request failed");
       const body = (await response.json()) as { accounts: AccountUsage[] };
       setAccounts(body.accounts);
+      setUpdatedAt(new Date().toISOString());
       if (!quiet) {
         setRefreshResult("success");
         refreshFeedbackTimer.current = setTimeout(() => setRefreshResult("idle"), 2000);
@@ -333,7 +337,7 @@ export function Dashboard({
                 size="sm"
                 disabled={refreshing}
                 className={refreshing
-                  ? "disabled:opacity-100 border-blue-600 bg-blue-600 text-white hover:bg-blue-700 hover:text-white dark:border-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700"
+                  ? undefined
                   : refreshResult === "success"
                     ? "border-green-700 bg-green-700 text-white hover:bg-green-800 hover:text-white dark:border-green-700 dark:bg-green-700 dark:hover:bg-green-800"
                     : refreshResult === "error"
@@ -351,7 +355,7 @@ export function Dashboard({
                   <RefreshCw />
                 )}
                 <span aria-live="polite">
-                  {refreshing ? "更新中" : refreshResult === "success" ? "更新完了" : refreshResult === "error" ? "更新失敗" : "更新"}
+                  {refreshing ? "更新中" : refreshResult === "success" ? "更新成功" : refreshResult === "error" ? "更新失敗" : "更新"}
                 </span>
               </Button>
               <Button
@@ -482,6 +486,18 @@ export function Dashboard({
               }
               onDelete={setAccountToDelete}
             />
+            <footer className="border-t px-6 py-3 text-sm text-muted-foreground">
+              最終更新: {updatedAt ? (
+                <time dateTime={updatedAt}>
+                  {new Intl.DateTimeFormat("ja-JP", {
+                    timeZone: "Asia/Tokyo",
+                    year: "numeric", month: "2-digit", day: "2-digit",
+                    hour: "2-digit", minute: "2-digit", second: "2-digit",
+                    hourCycle: "h23",
+                  }).format(new Date(updatedAt)).replace(/\//g, "年").replace(/年(\d{2}) /, "月$1日 ")}
+                </time>
+              ) : "未更新"}
+            </footer>
           </div>
         )}
       </main>

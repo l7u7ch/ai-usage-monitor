@@ -54,6 +54,26 @@ function openAccountMenu(email = "me@example.com") {
 }
 
 describe("Dashboard", () => {
+  it("shows the initial update timestamp in the card footer", () => {
+    render(<Dashboard initialAccounts={accounts} initialUpdatedAt="2026-10-04T04:05:23.000Z" />);
+    const timestamp = screen.getByText("2026年10月04日 13:05:23");
+    expect(timestamp).toHaveAttribute("datetime", "2026-10-04T04:05:23.000Z");
+    expect(timestamp.closest("footer")).toHaveClass("border-t", "text-muted-foreground");
+  });
+
+  it("updates the footer only when refreshing succeeds", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-10-04T05:06:07.000Z"));
+    const fetchMock = vi.fn().mockResolvedValueOnce({ ok: true, json: async () => ({ accounts }) }).mockRejectedValueOnce(new Error("offline"));
+    vi.stubGlobal("fetch", fetchMock);
+    render(<Dashboard initialAccounts={accounts} initialUpdatedAt="2026-10-04T04:05:23.000Z" />);
+    await act(async () => { fireEvent.click(screen.getByRole("button", { name: "更新" })); });
+    expect(screen.getByText("2026年10月04日 14:06:07")).toBeInTheDocument();
+    vi.setSystemTime(new Date("2026-10-04T06:07:08.000Z"));
+    await act(async () => { fireEvent.click(screen.getByRole("button", { name: "更新成功" })); });
+    expect(screen.getByText("2026年10月04日 14:06:07")).toBeInTheDocument();
+  });
+
   it("shows manual refresh progress, success and failure", async () => {
     let resolveRequest!: (value: unknown) => void;
     const fetchMock = vi.fn().mockImplementationOnce(() => new Promise((resolve) => { resolveRequest = resolve; }));
@@ -62,10 +82,11 @@ describe("Dashboard", () => {
     fireEvent.click(screen.getByRole("button", { name: "更新" }));
     const pending = screen.getByRole("button", { name: "更新中" });
     expect(pending).toBeDisabled();
-    expect(pending).toHaveClass("bg-blue-600", "text-white", "border-blue-600", "disabled:opacity-100", "dark:bg-blue-600", "hover:text-white");
+    expect(pending).toHaveClass("disabled:opacity-50");
+    expect(pending).not.toHaveClass("bg-blue-600", "disabled:opacity-100");
     expect(pending.querySelector("svg")).toHaveClass("animate-spin");
     resolveRequest({ ok: true, json: async () => ({ accounts }) });
-    const success = await screen.findByRole("button", { name: "更新完了" });
+    const success = await screen.findByRole("button", { name: "更新成功" });
     expect(success).toHaveClass("bg-green-700", "text-white", "border-green-700", "hover:text-white", "dark:bg-green-700", "dark:hover:bg-green-800");
     await screen.findByRole("button", { name: "更新" }, { timeout: 4000 });
     fetchMock.mockRejectedValueOnce(new Error("offline"));

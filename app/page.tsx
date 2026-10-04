@@ -17,5 +17,5 @@ export default async function Home() {
   const storedAccounts = await getAccountStore().list();
   const accounts = await Promise.all(storedAccounts.map((account) => loadAccountUsage(account)));
 
-  return <Dashboard initialAccounts={accounts} />;
+  return <Dashboard initialAccounts={accounts} initialUpdatedAt={new Date().toISOString()} />;
 }
