@@ -29,14 +29,12 @@ export async function POST(request: NextRequest) {
   }
   const response = NextResponse.json({ ok: true }, { headers: { "cache-control": "no-store" } });
   const expiresAt = activityAt + SESSION_LIFETIME_SECONDS * 1_000;
-  if (expiresAt > Number(token!.split(".")[0])) {
-    response.cookies.set(SESSION_COOKIE_NAME, createSession(auth, activityAt), {
-      expires: new Date(expiresAt),
-      httpOnly: true,
-      path: "/",
-      sameSite: "lax",
-      secure: process.env.NODE_ENV === "production",
-    });
-  }
+  response.cookies.set(SESSION_COOKIE_NAME, createSession(auth), {
+    expires: new Date(expiresAt),
+    httpOnly: true,
+    path: "/",
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+  });
   return response;
 }

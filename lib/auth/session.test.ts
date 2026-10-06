@@ -43,15 +43,13 @@ describe("session authentication", () => {
     expect(validateSessionInPageRoute(token, { ...auth, sessionSigningSecret: "other-secret" })).toBe(false);
   });
 
-  it("expires sessions after the configured lifetime", () => {
+  it("keeps sessions valid without an inactivity timeout", () => {
     vi.useFakeTimers();
     const token = createSession(auth);
 
-    expect(Number(token.split(".")[0]) - Date.now()).toBe(12 * 60 * 60 * 1_000);
-    vi.advanceTimersByTime(12 * 60 * 60 * 1_000 - 1);
+    expect(token.split(".")[0]).toBe("0");
+    vi.advanceTimersByTime(10 * 365 * 24 * 60 * 60 * 1_000);
     expect(isValidSession(token, auth)).toBe(true);
-    vi.advanceTimersByTime(1);
-    expect(isValidSession(token, auth)).toBe(false);
 
     vi.useRealTimers();
   });

@@ -12,7 +12,7 @@ vi.mock("@/lib/auth/auth-store", async (original) => ({
 afterEach(() => vi.useRealTimers());
 
 describe("initial session lifetime", () => {
-  it.each([["login", login], ["setup", setup]] as const)("%s issues a 12-hour cookie and matching signed token", async (_name, handler) => {
+  it.each([["login", login], ["setup", setup]] as const)("%s issues a persistent cookie and non-expiring token", async (_name, handler) => {
     vi.useFakeTimers();
     const auth = { loginId: "owner", passwordHash: hashPassword("test-password", "salt"), sessionSigningSecret: "test-secret" };
     store.read.mockResolvedValue(auth);
@@ -24,10 +24,10 @@ describe("initial session lifetime", () => {
     }));
     expect(response.status).toBe(200);
     const cookie = response.cookies.get(SESSION_COOKIE_NAME)!;
-    expect(cookie.maxAge).toBe(43_200);
-    expect(Number(cookie.value.split(".")[0]) - Date.now()).toBe(43_200_000);
+    expect(cookie.maxAge).toBe(34_560_000);
+    expect(cookie.value.split(".")[0]).toBe("0");
     expect(isValidSession(cookie.value, auth)).toBe(true);
     vi.advanceTimersByTime(43_200_000);
-    expect(isValidSession(cookie.value, auth)).toBe(false);
+    expect(isValidSession(cookie.value, auth)).toBe(true);
   });
 });

@@ -3,17 +3,17 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 import type { AuthConfig } from "@/lib/auth/auth-store";
 import { isValidPassword } from "@/lib/auth/auth-store";
 
-// Renewed only by the explicit user-activity endpoint, never by polling.
-export const SESSION_LIFETIME_SECONDS = 12 * 60 * 60;
-const SESSION_LIFETIME_MS = SESSION_LIFETIME_SECONDS * 1_000;
+// Browser storage lifetime; the signed session itself does not expire.
+export const SESSION_LIFETIME_SECONDS = 400 * 24 * 60 * 60;
 export const SESSION_COOKIE_NAME = "codex-quota-session";
 
 export function isValidCredential(id: string, password: string, auth: AuthConfig) {
   return id === auth.loginId && isValidPassword(password, auth.passwordHash);
 }
 
-export function createSession(auth: AuthConfig, activityAt = Date.now()) {
-  const expiresAt = activityAt + SESSION_LIFETIME_MS;
+export function createSession(auth: AuthConfig) {
+  // Zero marks a non-expiring session. Legacy dated tokens still expire.
+  const expiresAt = 0;
   const signature = createHmac("sha256", auth.sessionSigningSecret)
     .update(String(expiresAt))
     .digest("base64url");
@@ -27,7 +27,7 @@ export function isValidSession(token: string | undefined, auth: AuthConfig | nul
 
   const [expiresAtText, signature] = token.split(".");
   const expiresAt = Number(expiresAtText);
-  if (!Number.isSafeInteger(expiresAt) || !signature || expiresAt <= Date.now()) return false;
+  if (!Number.isSafeInteger(expiresAt) || !signature || (expiresAt !== 0 && expiresAt <= Date.now())) return false;
 
   const expectedSignature = createHmac("sha256", auth.sessionSigningSecret)
     .update(expiresAtText)

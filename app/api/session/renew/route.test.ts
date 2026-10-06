@@ -1,4 +1,5 @@
 import { NextRequest } from "next/server";
+import { createHmac } from "node:crypto";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createSession, isValidSession, SESSION_COOKIE_NAME } from "@/lib/auth/session";
 
@@ -19,7 +20,7 @@ beforeEach(() => { vi.useFakeTimers(); vi.setSystemTime(new Date("2026-01-01T00:
 afterEach(() => vi.useRealTimers());
 
 describe("activity renewal", () => {
-  it("moves signed expiry and cookie to 12 hours after the actual activity, not the delayed request", async () => {
+  it("refreshes persistent storage without expiring the signed session", async () => {
     const token = createSession(auth);
     vi.advanceTimersByTime(60_000);
     const activityAt = Date.now();
@@ -27,8 +28,8 @@ describe("activity renewal", () => {
     const response = await renew(token, activityAt);
     expect(response.status).toBe(200);
     const cookie = response.cookies.get(SESSION_COOKIE_NAME)!;
-    expect(Number(cookie.value.split(".")[0])).toBe(activityAt + 43_200_000);
-    expect(cookie.expires).toEqual(new Date(activityAt + 43_200_000));
+    expect(cookie.value.split(".")[0]).toBe("0");
+    expect(cookie.expires).toEqual(new Date(activityAt + 34_560_000_000));
     expect(isValidSession(cookie.value, auth)).toBe(true);
     expect(response.headers.get("set-cookie")).toContain("HttpOnly");
     expect(response.headers.get("set-cookie")).toContain("SameSite=lax");
@@ -40,7 +41,8 @@ describe("activity renewal", () => {
     expect(response.headers.get("set-cookie")).toBeNull();
   });
   it("never revives a session at or after its expiry, even for earlier activity", async () => {
-    const token = createSession(auth);
+    const expiry = String(Date.now() + 43_200_000);
+    const token = `${expiry}.${createHmac("sha256", auth.sessionSigningSecret).update(expiry).digest("base64url")}`;
     vi.advanceTimersByTime(43_200_000);
     for (const delay of [0, 1]) {
       vi.advanceTimersByTime(delay);
@@ -61,11 +63,11 @@ describe("activity renewal", () => {
       expect(response.headers.get("set-cookie")).toBeNull();
     }
   });
-  it("does not shorten a session with stale activity", async () => {
+  it("refreshes persistent storage for delayed activity", async () => {
     const token = createSession(auth);
     const response = await renew(token, Date.now() - 1_000);
     expect(response.status).toBe(200);
-    expect(response.headers.get("set-cookie")).toBeNull();
+    expect(response.cookies.get(SESSION_COOKIE_NAME)?.value).toBe(token);
   });
   it("rejects removed auth configuration", async () => {
     read.mockResolvedValue(null);
