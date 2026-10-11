@@ -7,6 +7,7 @@ import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/card";
 import { RemainingProjection } from "@/components/remaining-projection";
+import { ObservedUsageChart } from "@/components/observed-usage-chart";
 import type { UsageForecastAccount, UsageForecastResponse } from "@/lib/usage/types";
 
 const DEFAULT_REFRESH_INTERVAL_MS = 5 * 60 * 1_000;
@@ -22,7 +23,7 @@ function formatSampledAt(sampledAt: number) {
   }).format(new Date(sampledAt));
 }
 
-function AccountForecast({ account, sampledAt }: { account: UsageForecastAccount; sampledAt: number }) {
+function AccountForecast({ account, sampledAt, experimental }: { account: UsageForecastAccount; sampledAt: number; experimental: boolean }) {
   return (
     <Card>
       <CardHeader className="flex flex-row items-start justify-between gap-4">
@@ -44,7 +45,7 @@ function AccountForecast({ account, sampledAt }: { account: UsageForecastAccount
                 key={window.id}
                 className="rounded-lg border border-border/70 bg-muted/10 p-4"
               >
-                <RemainingProjection window={window} sampledAt={sampledAt} />
+                {experimental ? <ObservedUsageChart window={window} sampledAt={sampledAt} /> : <RemainingProjection window={window} sampledAt={sampledAt} />}
               </section>
             ))
           ) : (
@@ -63,7 +64,7 @@ function AccountForecast({ account, sampledAt }: { account: UsageForecastAccount
   );
 }
 
-export function UsageDashboard() {
+export function UsageDashboard({ experimental = false }: { experimental?: boolean } = {}) {
   const [data, setData] = useState<UsageForecastResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshError, setRefreshError] = useState(false);
@@ -117,12 +118,15 @@ export function UsageDashboard() {
           <p className="text-xs font-medium uppercase tracking-[0.16em] text-muted-foreground">
             AI Usage Monitor
           </p>
-          <h1 className="text-2xl font-semibold tracking-tight">利用ペース予測</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">{experimental ? "使用率グラフ（実験）" : "利用ペース予測"}</h1>
           <p className="max-w-2xl text-sm text-muted-foreground">
-            直近の利用率から、リセット前に利用枠へ到達する可能性を推定します。
+            {experimental ? "直近1時間の使用率を表示します。縦軸は利用上限に対する使用率（0〜100%）です。" : "直近の利用率から、リセット前に利用枠へ到達する可能性を推定します。"}
           </p>
           <Link href="/" className="inline-block text-sm text-foreground underline underline-offset-4">
             アカウント管理に戻る
+          </Link>
+          <Link href={experimental ? "/usage" : "/usage/experimental"} className="ml-4 inline-block text-sm text-foreground underline underline-offset-4">
+            {experimental ? "利用ペース予測を見る" : "使用率グラフ（実験）を見る"}
           </Link>
         </div>
         <div className="text-sm text-muted-foreground" role="status" aria-live="polite">
@@ -155,16 +159,16 @@ export function UsageDashboard() {
           </Link>
         </div>
       ) : (
-        <section aria-label="アカウント別の利用予測" className="space-y-4">
+        <section aria-label={experimental ? "アカウント別の使用率" : "アカウント別の利用予測"} className="space-y-4">
           {loading && !data ? (
             <p className="py-12 text-center text-sm text-muted-foreground">利用状況を取得しています…</p>
           ) : data?.accounts.length ? (
             data.accounts.map((account) => (
-              <AccountForecast key={account.id} account={account} sampledAt={data.sampledAt} />
+              <AccountForecast key={account.id} account={account} sampledAt={data.sampledAt} experimental={experimental} />
             ))
           ) : data ? (
             <div className="rounded-lg border border-dashed px-6 py-12 text-center">
-              <p className="font-medium">予測対象のアカウントがありません</p>
+              <p className="font-medium">{experimental ? "表示対象のアカウントがありません" : "予測対象のアカウントがありません"}</p>
               <p className="mt-1 text-sm text-muted-foreground">登録済みアカウントがあると利用ペースを表示します。</p>
             </div>
           ) : null}
@@ -173,7 +177,7 @@ export function UsageDashboard() {
 
       {!sessionExpired ? (
         <p className="text-xs leading-relaxed text-muted-foreground">
-          予測は直近1時間の利用率の傾向に基づく目安です。十分な観測データが集まるまでは予測を表示しません。
+          {experimental ? "実績のみを表示し、予測は含みません。現在のリセット周期内の観測が対象です。画面を閉じている間の常時収集は行いません。" : "予測は直近1時間の利用率の傾向に基づく目安です。十分な観測データが集まるまでは予測を表示しません。"}
         </p>
       ) : null}
     </main>
