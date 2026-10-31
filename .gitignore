@@ -4,6 +4,7 @@
 *.log
 *.tsbuildinfo
 /.next/
+/.worktrees/
 /.vercel/
 /coverage/
 /data/

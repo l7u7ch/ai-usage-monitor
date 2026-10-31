@@ -9,6 +9,7 @@ export default defineConfig([
     ".codex-profiles/**",
     "data/**",
     ".next/**",
+    ".worktrees/**",
     "out/**",
     "build/**",
     "next-env.d.ts",
