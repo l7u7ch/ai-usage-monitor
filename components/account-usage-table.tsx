@@ -93,14 +93,14 @@ function UsageWindowCell({ window }: { window?: UsageWindow }) {
   );
 }
 
-function ResetCell({ window, now }: { window?: UsageWindow; now: number }) {
+function ResetCell({ window, now, showRemaining, onToggle }: { window?: UsageWindow; now: number; showRemaining: boolean; onToggle: () => void }) {
   if (!window) return <span className="text-sm text-foreground">—</span>;
   if (window.remainingPercent === 100) return <span className="text-sm text-foreground">未使用</span>;
 
   return (
-    <span className="whitespace-nowrap text-sm font-normal tabular-nums text-foreground">
-      {formatReset(window.resetsAt, now)} · {formatTimeUntilReset(window.resetsAt, now)}
-    </span>
+    <button type="button" onClick={onToggle} aria-label={`${window.label}のリセット表示を切り替え`} className="cursor-pointer whitespace-nowrap text-sm font-normal tabular-nums text-foreground">
+      {showRemaining ? formatTimeUntilReset(window.resetsAt, now).replace(/^あと/, "") : formatReset(window.resetsAt, now)}
+    </button>
   );
 }
 
@@ -205,6 +205,16 @@ export function AccountUsageTable({
   const [now, setNow] = useState(() => Date.now());
   const [contextMenuAccountId, setContextMenuAccountId] = useState<string | null>(null);
   const [contextMenuOpen, setContextMenuOpen] = useState(false);
+  const [remainingCells, setRemainingCells] = useState<Set<string>>(() => new Set());
+
+  function toggleResetCell(key: string) {
+    setRemainingCells((previous) => {
+      const next = new Set(previous);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  }
 
   useEffect(() => {
     const timer = window.setInterval(() => setNow(Date.now()), 60_000);
@@ -267,7 +277,7 @@ export function AccountUsageTable({
         id: "short-reset",
         header: "リセット（5時間枠）",
         cell: ({ row }) => row.original.status === "ready"
-          ? <ResetCell window={windowsByAccount.get(row.original.id)?.[0]} now={now} />
+          ? <ResetCell window={windowsByAccount.get(row.original.id)?.[0]} now={now} showRemaining={remainingCells.has(JSON.stringify([row.original.id, "short"]))} onToggle={() => toggleResetCell(JSON.stringify([row.original.id, "short"]))} />
           : null,
       },
       {
@@ -281,11 +291,11 @@ export function AccountUsageTable({
         id: "long-reset",
         header: "リセット（週間枠）",
         cell: ({ row }) => row.original.status === "ready"
-          ? <ResetCell window={windowsByAccount.get(row.original.id)?.[1]} now={now} />
+          ? <ResetCell window={windowsByAccount.get(row.original.id)?.[1]} now={now} showRemaining={remainingCells.has(JSON.stringify([row.original.id, "long"]))} onToggle={() => toggleResetCell(JSON.stringify([row.original.id, "long"]))} />
           : null,
       },
     ],
-    [now, windowsByAccount],
+    [now, windowsByAccount, remainingCells],
   );
 
   const table = useTable({
