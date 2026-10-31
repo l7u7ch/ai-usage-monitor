@@ -58,6 +58,30 @@ function openAccountMenu(email = "me@example.com") {
 }
 
 describe("Dashboard", () => {
+  it("switches all reset cells together using the header button", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2027, 0, 1, 12));
+    const windows = [...accounts[0].windows, { ...accounts[0].windows[0], id: "weekly", label: "週間利用上限", resetsAt: 1_800_345_600, windowDurationMins: 10080 }];
+    const rows = twoAccounts.map((account) => ({ ...account, windows }));
+    const { container } = render(<Dashboard initialAccounts={rows} />);
+    const cells = rows.flatMap((account) => {
+      const row = within(container).getAllByRole("row").find((item) => item.textContent?.includes(account.email));
+      if (!row) throw new Error("missing account row");
+      const columns = row.querySelectorAll(":scope > th, :scope > td");
+      return [columns[3], columns[5]];
+    });
+    const original = cells.map((cell) => cell.textContent);
+    const toggle = within(screen.getByRole("banner")).getByRole("button", { name: "リセット表示を切り替え" });
+    expect(toggle).toHaveAttribute("aria-pressed", "false");
+    cells.forEach((cell) => expect(within(cell as HTMLElement).queryByRole("button")).toBeNull());
+    fireEvent.click(toggle);
+    expect(toggle).toHaveAttribute("aria-pressed", "true");
+    cells.forEach((cell) => expect(cell.textContent).toMatch(/^\d+日/));
+    act(() => vi.advanceTimersByTime(60_000));
+    cells.forEach((cell) => expect(cell.textContent).toMatch(/^\d+日/));
+    fireEvent.click(toggle);
+    expect(cells.map((cell) => cell.textContent)).toEqual(original);
+  });
   it("renders both theme icons on the server for CSS selection", () => {
     const html = renderToString(<ThemeProvider attribute="class" defaultTheme="dark"><ThemeToggle /></ThemeProvider>);
     expect(html).toContain("lucide-sun");
@@ -76,7 +100,7 @@ describe("Dashboard", () => {
     expect(within(toggle).getByText("ダーク")).toHaveClass("block", "dark:hidden");
     const headerButtons = within(screen.getByRole("banner")).getAllByRole("button");
     expect(headerButtons.map((button) => button.getAttribute("aria-label") || button.textContent)).toEqual([
-      "更新", "追加", "ライトモードに切り替え", "ログアウト",
+      "リセット表示を切り替え", "更新", "追加", "ライトモードに切り替え", "ログアウト",
     ]);
     fireEvent.click(toggle);
     await waitFor(() => expect(document.documentElement).not.toHaveClass("dark"));

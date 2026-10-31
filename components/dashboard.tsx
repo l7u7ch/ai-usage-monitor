@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Check, CircleAlert, Copy, LoaderCircle, LogOut, Plus, RefreshCw } from "lucide-react";
+import { Check, CircleAlert, Clock, Copy, LoaderCircle, LogOut, Plus, RefreshCw } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
@@ -36,6 +36,7 @@ export function Dashboard({
 }) {
   const router = useRouter();
   const [accounts, setAccounts] = useState(initialAccounts);
+  const [showRemaining, setShowRemaining] = useState(false);
   const [updatedAt, setUpdatedAt] = useState(initialUpdatedAt);
   const [refreshing, setRefreshing] = useState(false);
   const [refreshResult, setRefreshResult] = useState<"idle" | "success" | "error">("idle");
@@ -331,6 +332,10 @@ export function Dashboard({
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
+            <Button variant="outline" size="sm" aria-label="リセット表示を切り替え" aria-pressed={showRemaining} onClick={() => setShowRemaining((value) => !value)}>
+              <Clock />
+              {showRemaining ? "残り時間" : "リセット日時"}
+            </Button>
             <div className="flex gap-2">
               <Button
                 variant="outline"
@@ -474,6 +479,7 @@ export function Dashboard({
         {accounts.length > 0 && (
           <div className="mx-auto w-fit max-w-full overflow-hidden rounded-md border border-border/80 bg-card/30">
             <AccountUsageTable
+              showRemaining={showRemaining}
               initialNow={initialUpdatedAt ? new Date(initialUpdatedAt).getTime() : undefined}
               accounts={accounts}
               busyAccountId={actionPendingId}

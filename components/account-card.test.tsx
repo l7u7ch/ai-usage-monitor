@@ -86,8 +86,9 @@ describe("AccountUsageTable", () => {
     const element = <AccountUsageTable accounts={[account]} initialNow={initialNow} busyAccountId={null} loginPending={false} onMoveUp={() => {}} onMoveDown={() => {}} onRename={() => {}} onReauthenticate={() => {}} onDelete={() => {}} />;
     const container = document.createElement("div");
     container.innerHTML = renderToString(element);
-    const selector = '[aria-label="5時間の使用制限のリセット表示を切り替え"]';
+    const selector = 'tbody tr td:nth-child(4) span';
     const before = container.querySelector(selector)?.textContent;
+    expect(before).toBe(formatReset(account.windows[0].resetsAt, initialNow));
     vi.setSystemTime(new Date(2027, 0, 16, 12));
     let root: ReturnType<typeof hydrateRoot>;
     await act(async () => { root = hydrateRoot(container, element); });
@@ -246,31 +247,21 @@ describe("AccountUsageTable", () => {
     }
   });
 
-  it("toggles only the selected reset cell between the date and remaining time", () => {
+  it("shows reset dates without individual cell controls", () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date(2027, 0, 1, 12, 0));
     const { container } = renderAccounts([account, { ...account, id: "account-2", email: "other@example.com" }]);
     const cells = getAccountRow(container).querySelectorAll(":scope > th, :scope > td");
-    const otherCells = getAccountRow(container, "other@example.com").querySelectorAll(":scope > th, :scope > td");
+
     expect(cells[2]).toHaveTextContent("72%");
     expect(cells[4]).toHaveTextContent("41%");
     for (const index of [3, 5]) {
       expect(cells[index].textContent).toMatch(/^\d{2}月\d{2}日 \d{2}:\d{2}$/);
       expect(cells[index].firstElementChild).toHaveClass("whitespace-nowrap");
     }
-    const original = cells[3].textContent;
-    const otherOriginal = otherCells[3].textContent;
-    fireEvent.click(within(cells[3] as HTMLElement).getByRole("button"));
-    expect(cells[3].textContent).toMatch(/^\d+日(?:\d+時間)?(?:\d+分)?$/);
-    expect(otherCells[3].textContent).toBe(otherOriginal);
-    expect(cells[5].textContent).toMatch(/^\d{2}月\d{2}日 \d{2}:\d{2}$/);
-    act(() => vi.advanceTimersByTime(60_000));
-    expect(cells[3].textContent).toMatch(/^\d+日(?:\d+時間)?(?:\d+分)?$/);
-    fireEvent.click(within(cells[3] as HTMLElement).getByRole("button"));
-    expect(cells[3].textContent).toBe(original);
-    fireEvent.click(within(cells[5] as HTMLElement).getByRole("button"));
-    expect(cells[5].textContent).toMatch(/^\d+日(?:\d+時間)?(?:\d+分)?$/);
-    expect(cells[3].textContent).toBe(original);
+    for (const index of [3, 5]) {
+      expect(within(cells[index] as HTMLElement).queryByRole("button")).toBeNull();
+    }
   });
 
   it("prompts for login when the account is signed out", () => {
