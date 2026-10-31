@@ -5,6 +5,7 @@ import {
   render,
   screen,
   waitFor,
+  within,
 } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { ThemeProvider } from "next-themes";
@@ -63,12 +64,20 @@ describe("Dashboard", () => {
     expect(html).toContain("lucide-moon");
     expect(html).toContain("dark:hidden");
     expect(html).toContain("dark:block");
+    expect(html).toContain('class="hidden dark:block">ライト</span>');
+    expect(html).toContain('class="block dark:hidden">ダーク</span>');
   });
   it("switches between dark and light and persists the preference", async () => {
     localStorage.clear();
     vi.stubGlobal("matchMedia", () => ({ matches: false, addListener: () => {}, removeListener: () => {} }));
     const view = render(<ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}><Dashboard initialAccounts={accounts} /></ThemeProvider>);
     const toggle = await screen.findByRole("button", { name: "ライトモードに切り替え" });
+    expect(within(toggle).getByText("ライト")).toHaveClass("hidden", "dark:block");
+    expect(within(toggle).getByText("ダーク")).toHaveClass("block", "dark:hidden");
+    const headerButtons = within(screen.getByRole("banner")).getAllByRole("button");
+    expect(headerButtons.map((button) => button.getAttribute("aria-label") || button.textContent)).toEqual([
+      "更新", "追加", "ライトモードに切り替え", "ログアウト",
+    ]);
     fireEvent.click(toggle);
     await waitFor(() => expect(document.documentElement).not.toHaveClass("dark"));
     expect(localStorage.getItem("theme")).toBe("light");

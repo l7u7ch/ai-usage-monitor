@@ -331,7 +331,6 @@ export function Dashboard({
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <ThemeToggle />
             <div className="flex gap-2">
               <Button
                 variant="outline"
@@ -374,7 +373,8 @@ export function Dashboard({
                 追加
               </Button>
             </div>
-            <div>
+            <div className="flex gap-2">
+              <ThemeToggle />
               <Button
                 variant="outline"
                 onClick={() => setLogoutDialogOpen(true)}

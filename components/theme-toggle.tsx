@@ -18,6 +18,8 @@ export function ThemeToggle() {
     <Button variant="outline" size="sm" aria-label={label} title={label} onClick={() => setTheme(dark ? "light" : "dark")}>
       <Sun className="hidden dark:block" />
       <Moon className="block dark:hidden" />
+      <span className="hidden dark:block">ライト</span>
+      <span className="block dark:hidden">ダーク</span>
     </Button>
   );
 }
