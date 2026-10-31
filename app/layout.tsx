@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
+import { ThemeProvider } from "next-themes";
 
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
@@ -20,11 +21,13 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
   return (
-    <html lang="ja" className="dark">
+    <html lang="ja" suppressHydrationWarning>
       <body>
-        <SessionActivity />
-        {children}
-        <Toaster richColors position="bottom-right" />
+        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
+          <SessionActivity />
+          {children}
+          <Toaster richColors position="bottom-right" />
+        </ThemeProvider>
       </body>
     </html>
   );

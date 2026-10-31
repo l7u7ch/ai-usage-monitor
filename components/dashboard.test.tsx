@@ -7,6 +7,7 @@ import {
   waitFor,
 } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { ThemeProvider } from "next-themes";
 
 import { Dashboard } from "@/components/dashboard";
 
@@ -54,6 +55,21 @@ function openAccountMenu(email = "me@example.com") {
 }
 
 describe("Dashboard", () => {
+  it("switches between dark and light and persists the preference", async () => {
+    localStorage.clear();
+    vi.stubGlobal("matchMedia", () => ({ matches: false, addListener: () => {}, removeListener: () => {} }));
+    const view = render(<ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}><Dashboard initialAccounts={accounts} /></ThemeProvider>);
+    const toggle = await screen.findByRole("button", { name: "ライトモードに切り替え" });
+    fireEvent.click(toggle);
+    await waitFor(() => expect(document.documentElement).not.toHaveClass("dark"));
+    expect(localStorage.getItem("theme")).toBe("light");
+    view.unmount();
+    render(<ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}><Dashboard initialAccounts={accounts} /></ThemeProvider>);
+    expect(await screen.findByRole("button", { name: "ダークモードに切り替え" })).toBeEnabled();
+    fireEvent.click(screen.getByRole("button", { name: "ダークモードに切り替え" }));
+    await waitFor(() => expect(document.documentElement).toHaveClass("dark"));
+    expect(localStorage.getItem("theme")).toBe("dark");
+  });
   it("shows the initial update timestamp in the card footer", () => {
     render(<Dashboard initialAccounts={accounts} initialUpdatedAt="2026-10-04T04:05:23.000Z" />);
     const timestamp = screen.getByText("2026年10月04日 13:05:23");

@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
 import { AccountUsageTable } from "@/components/account-usage-table";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -330,6 +331,7 @@ export function Dashboard({
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
+            <ThemeToggle />
             <div className="flex gap-2">
               <Button
                 variant="outline"
