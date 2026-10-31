@@ -14,6 +14,7 @@ const accountTableFeatures = tableFeatures({});
 
 type AccountUsageTableProps = {
   accounts: AccountUsage[];
+  initialNow?: number;
   busyAccountId: string | null;
   loginPending: boolean;
   onMoveUp: (account: AccountUsage) => void;
@@ -194,6 +195,7 @@ function AccountContextMenu({
 
 export function AccountUsageTable({
   accounts,
+  initialNow,
   busyAccountId,
   loginPending,
   onMoveUp,
@@ -202,7 +204,7 @@ export function AccountUsageTable({
   onReauthenticate,
   onDelete,
 }: AccountUsageTableProps) {
-  const [now, setNow] = useState(() => Date.now());
+  const [now, setNow] = useState(() => initialNow ?? Date.now());
   const [contextMenuAccountId, setContextMenuAccountId] = useState<string | null>(null);
   const [contextMenuOpen, setContextMenuOpen] = useState(false);
   const [remainingCells, setRemainingCells] = useState<Set<string>>(() => new Set());

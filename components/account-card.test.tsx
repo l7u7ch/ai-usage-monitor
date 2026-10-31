@@ -1,5 +1,7 @@
 import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { renderToString } from "react-dom/server";
+import { hydrateRoot } from "react-dom/client";
 
 import { AccountUsageTable, formatReset, formatTimeUntilReset } from "@/components/account-usage-table";
 import type { AccountUsage } from "@/lib/accounts/account-usage";
@@ -69,6 +71,29 @@ function openAccountContextMenu(container: HTMLElement, email = "me@example.com"
 }
 
 describe("AccountUsageTable", () => {
+  it("uses the provided initial time during server rendering", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2027, 0, 1, 12));
+    const initialNow = new Date(2027, 0, 15, 12).getTime();
+    const html = renderToString(<AccountUsageTable accounts={[account]} initialNow={initialNow} busyAccountId={null} loginPending={false} onMoveUp={() => {}} onMoveDown={() => {}} onRename={() => {}} onReauthenticate={() => {}} onDelete={() => {}} />);
+    expect(html).toContain(formatReset(account.windows[0].resetsAt, initialNow));
+    expect(html).not.toContain(formatReset(account.windows[0].resetsAt, Date.now()));
+  });
+  it("keeps the reset text stable during hydration when the clock advances", async () => {
+    vi.useFakeTimers();
+    const initialNow = new Date(2027, 0, 15, 12).getTime();
+    vi.setSystemTime(initialNow);
+    const element = <AccountUsageTable accounts={[account]} initialNow={initialNow} busyAccountId={null} loginPending={false} onMoveUp={() => {}} onMoveDown={() => {}} onRename={() => {}} onReauthenticate={() => {}} onDelete={() => {}} />;
+    const container = document.createElement("div");
+    container.innerHTML = renderToString(element);
+    const selector = '[aria-label="5時間の使用制限のリセット表示を切り替え"]';
+    const before = container.querySelector(selector)?.textContent;
+    vi.setSystemTime(new Date(2027, 0, 16, 12));
+    let root: ReturnType<typeof hydrateRoot>;
+    await act(async () => { root = hydrateRoot(container, element); });
+    expect(container.querySelector(selector)?.textContent).toBe(before);
+    await act(async () => { root.unmount(); });
+  });
   it("sizes the table to its content while keeping horizontal overflow available", () => {
     const { container } = renderAccount();
     const table = within(container).getByRole("table");

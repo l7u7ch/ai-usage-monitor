@@ -10,4 +10,5 @@
 /data/
 /.codex-profiles/
 /node_modules/
+/next-env.d.ts
 /out/

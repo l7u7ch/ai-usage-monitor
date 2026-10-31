@@ -15,8 +15,9 @@ export function ThemeToggle() {
   const label = dark ? "ライトモードに切り替え" : "ダークモードに切り替え";
 
   return (
-    <Button variant="outline" size="sm" disabled={!mounted} aria-label={label} title={label} onClick={() => setTheme(dark ? "light" : "dark")}>
-      {dark ? <Sun /> : <Moon />}
+    <Button variant="outline" size="sm" aria-label={label} title={label} onClick={() => setTheme(dark ? "light" : "dark")}>
+      <Sun className="hidden dark:block" />
+      <Moon className="block dark:hidden" />
     </Button>
   );
 }

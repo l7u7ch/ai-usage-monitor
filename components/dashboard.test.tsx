@@ -8,6 +8,8 @@ import {
 } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { ThemeProvider } from "next-themes";
+import { renderToString } from "react-dom/server";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 import { Dashboard } from "@/components/dashboard";
 
@@ -55,6 +57,13 @@ function openAccountMenu(email = "me@example.com") {
 }
 
 describe("Dashboard", () => {
+  it("renders both theme icons on the server for CSS selection", () => {
+    const html = renderToString(<ThemeProvider attribute="class" defaultTheme="dark"><ThemeToggle /></ThemeProvider>);
+    expect(html).toContain("lucide-sun");
+    expect(html).toContain("lucide-moon");
+    expect(html).toContain("dark:hidden");
+    expect(html).toContain("dark:block");
+  });
   it("switches between dark and light and persists the preference", async () => {
     localStorage.clear();
     vi.stubGlobal("matchMedia", () => ({ matches: false, addListener: () => {}, removeListener: () => {} }));

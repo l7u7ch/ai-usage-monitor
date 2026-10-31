@@ -474,6 +474,7 @@ export function Dashboard({
         {accounts.length > 0 && (
           <div className="mx-auto w-fit max-w-full overflow-hidden rounded-md border border-border/80 bg-card/30">
             <AccountUsageTable
+              initialNow={initialUpdatedAt ? new Date(initialUpdatedAt).getTime() : undefined}
               accounts={accounts}
               busyAccountId={actionPendingId}
               loginPending={Boolean(login)}
