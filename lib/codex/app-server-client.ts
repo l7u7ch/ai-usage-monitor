@@ -25,7 +25,7 @@ export class JsonRpcConnection extends EventEmitter {
   private readonly lines: readline.Interface;
 
   constructor(
-    private readonly input: Readable,
+    input: Readable,
     private readonly output: Writable,
   ) {
     super();
