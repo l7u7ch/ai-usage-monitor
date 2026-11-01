@@ -1,12 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Check, CircleAlert, Clock, Copy, LoaderCircle, LogOut, Plus, RefreshCw } from "lucide-react";
+import { Check, CircleAlert, Copy, LoaderCircle, LogOut, Plus, RefreshCw, Settings } from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
 import { AccountUsageTable } from "@/components/account-usage-table";
-import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -18,6 +18,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import type { AccountUsage } from "@/lib/accounts/account-usage";
+import { useResetDisplay } from "@/lib/reset-display";
 
 type LoginPrompt = {
   mode: "add" | "reauthenticate";
@@ -36,7 +37,7 @@ export function Dashboard({
 }) {
   const router = useRouter();
   const [accounts, setAccounts] = useState(initialAccounts);
-  const [showRemaining, setShowRemaining] = useState(false);
+  const showRemaining = useResetDisplay();
   const [updatedAt, setUpdatedAt] = useState(initialUpdatedAt);
   const [refreshing, setRefreshing] = useState(false);
   const [refreshResult, setRefreshResult] = useState<"idle" | "success" | "error">("idle");
@@ -327,10 +328,6 @@ export function Dashboard({
       <header className="sticky top-0 z-10 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
         <div className="mx-auto flex min-h-16 w-full max-w-[1500px] flex-wrap items-center justify-end gap-3 px-6 py-3 lg:px-10">
           <div className="flex flex-wrap items-center gap-2">
-            <Button variant="outline" size="sm" aria-label="リセット表示を切り替え" aria-pressed={showRemaining} onClick={() => setShowRemaining((value) => !value)}>
-              <Clock />
-              {showRemaining ? "残り時間" : "リセット日時"}
-            </Button>
             <div className="flex gap-2">
               <Button
                 variant="outline"
@@ -374,7 +371,7 @@ export function Dashboard({
               </Button>
             </div>
             <div className="flex gap-2">
-              <ThemeToggle />
+              <Button asChild variant="outline" size="sm"><Link href="/settings"><Settings />設定</Link></Button>
               <Button
                 variant="outline"
                 onClick={() => setLogoutDialogOpen(true)}

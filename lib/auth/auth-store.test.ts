@@ -4,8 +4,42 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 
 import { AuthStore, isValidPassword } from "@/lib/auth/auth-store";
+import { createSession, isValidSession } from "@/lib/auth/session";
 
 describe("AuthStore", () => {
+  it("allows only one simultaneous password change across store instances", async () => {
+    const root = await mkdtemp(path.join(tmpdir(), "codex-dashboard-auth-"));
+    const store = new AuthStore(root);
+    await store.create("owner", "old-password");
+    const outcomes = await Promise.allSettled([
+      store.changePassword("old-password", "first-password"),
+      new AuthStore(root).changePassword("old-password", "second-password"),
+    ]);
+    expect(outcomes.filter((outcome) => outcome.status === "fulfilled" && outcome.value === true)).toHaveLength(1);
+    const auth = await store.read();
+    expect(["first-password", "second-password"].filter((password) => isValidPassword(password, auth!.passwordHash))).toHaveLength(1);
+  });
+  it("rejects a stale session even when the password is unchanged", async () => {
+    const root = await mkdtemp(path.join(tmpdir(), "codex-dashboard-auth-"));
+    const store = new AuthStore(root);
+    const auth = await store.create("owner", "password");
+    expect(await store.changePassword("password", "password", auth.sessionSigningSecret)).toBe(true);
+    expect(await store.changePassword("password", "attacker-password", auth.sessionSigningSecret)).toBe(false);
+    expect(isValidPassword("password", (await store.read())!.passwordHash)).toBe(true);
+  });
+  it("changes the password and invalidates existing sessions", async () => {
+    const root = await mkdtemp(path.join(tmpdir(), "codex-dashboard-auth-"));
+    const store = new AuthStore(root);
+    const original = await store.create("owner", "old-password");
+    const token = createSession(original);
+    expect(await store.changePassword("wrong", "new-password")).toBe(false);
+    expect(await store.changePassword("old-password", "new-password")).toBe(true);
+    const updated = await store.read();
+    expect(updated?.loginId).toBe("owner");
+    expect(isValidPassword("new-password", updated!.passwordHash)).toBe(true);
+    expect(isValidPassword("old-password", updated!.passwordHash)).toBe(false);
+    expect(isValidSession(token, updated)).toBe(false);
+  });
   it("does not provision default credentials before setup", async () => {
     const root = await mkdtemp(path.join(tmpdir(), "codex-dashboard-auth-"));
     const store = new AuthStore(root);

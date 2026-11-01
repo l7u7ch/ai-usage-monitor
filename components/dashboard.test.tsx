@@ -58,11 +58,19 @@ function openAccountMenu(email = "me@example.com") {
 }
 
 describe("Dashboard", () => {
-  it("switches all reset cells together using the header button", () => {
+  it("links to settings instead of displaying preference controls in the header", () => {
+    render(<Dashboard initialAccounts={accounts} />);
+    const header = within(screen.getByRole("banner"));
+    expect(header.getByRole("link", { name: "設定" })).toHaveAttribute("href", "/settings");
+    expect(header.queryByRole("button", { name: "リセット表示を切り替え" })).toBeNull();
+    expect(header.queryByRole("button", { name: /モードに切り替え/ })).toBeNull();
+  });
+  it("uses the saved reset display preference for all reset cells", () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date(2027, 0, 1, 12));
     const windows = [...accounts[0].windows, { ...accounts[0].windows[0], id: "weekly", label: "週間利用上限", resetsAt: 1_800_345_600, windowDurationMins: 10080 }];
     const rows = twoAccounts.map((account) => ({ ...account, windows }));
+    localStorage.setItem("reset-display", "remaining");
     const { container } = render(<Dashboard initialAccounts={rows} />);
     const cells = rows.flatMap((account) => {
       const row = within(container).getAllByRole("row").find((item) => item.textContent?.includes(account.email));
@@ -70,17 +78,11 @@ describe("Dashboard", () => {
       const columns = row.querySelectorAll(":scope > th, :scope > td");
       return [columns[3], columns[5]];
     });
-    const original = cells.map((cell) => cell.textContent);
-    const toggle = within(screen.getByRole("banner")).getByRole("button", { name: "リセット表示を切り替え" });
-    expect(toggle).toHaveAttribute("aria-pressed", "false");
     cells.forEach((cell) => expect(within(cell as HTMLElement).queryByRole("button")).toBeNull());
-    fireEvent.click(toggle);
-    expect(toggle).toHaveAttribute("aria-pressed", "true");
     cells.forEach((cell) => expect(cell.textContent).toMatch(/^\d+日/));
     act(() => vi.advanceTimersByTime(60_000));
     cells.forEach((cell) => expect(cell.textContent).toMatch(/^\d+日/));
-    fireEvent.click(toggle);
-    expect(cells.map((cell) => cell.textContent)).toEqual(original);
+    localStorage.removeItem("reset-display");
   });
   it("renders both theme icons on the server for CSS selection", () => {
     const html = renderToString(<ThemeProvider attribute="class" defaultTheme="dark"><ThemeToggle /></ThemeProvider>);
@@ -94,19 +96,15 @@ describe("Dashboard", () => {
   it("switches between dark and light and persists the preference", async () => {
     localStorage.clear();
     vi.stubGlobal("matchMedia", () => ({ matches: false, addListener: () => {}, removeListener: () => {} }));
-    const view = render(<ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}><Dashboard initialAccounts={accounts} /></ThemeProvider>);
+    const view = render(<ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}><ThemeToggle /></ThemeProvider>);
     const toggle = await screen.findByRole("button", { name: "ライトモードに切り替え" });
     expect(within(toggle).getByText("ライト")).toHaveClass("hidden", "dark:block");
     expect(within(toggle).getByText("ダーク")).toHaveClass("block", "dark:hidden");
-    const headerButtons = within(screen.getByRole("banner")).getAllByRole("button");
-    expect(headerButtons.map((button) => button.getAttribute("aria-label") || button.textContent)).toEqual([
-      "リセット表示を切り替え", "更新", "追加", "ライトモードに切り替え", "ログアウト",
-    ]);
     fireEvent.click(toggle);
     await waitFor(() => expect(document.documentElement).not.toHaveClass("dark"));
     expect(localStorage.getItem("theme")).toBe("light");
     view.unmount();
-    render(<ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}><Dashboard initialAccounts={accounts} /></ThemeProvider>);
+    render(<ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}><ThemeToggle /></ThemeProvider>);
     expect(await screen.findByRole("button", { name: "ダークモードに切り替え" })).toBeEnabled();
     fireEvent.click(screen.getByRole("button", { name: "ダークモードに切り替え" }));
     await waitFor(() => expect(document.documentElement).toHaveClass("dark"));

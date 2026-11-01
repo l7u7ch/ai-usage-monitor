@@ -1,5 +1,5 @@
 import { randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
-import { link, mkdir, readFile, unlink, writeFile } from "node:fs/promises";
+import { link, mkdir, open, readFile, rename, unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
 
 export type AuthConfig = {
@@ -46,6 +46,33 @@ export class AuthStore {
       });
     }
     return auth;
+  }
+
+  async changePassword(currentPassword: string, newPassword: string, expectedSecret?: string): Promise<boolean> {
+    const lockFile = `${this.authFile}.lock`;
+    const lock = await open(lockFile, "wx", 0o600);
+    try {
+      const auth = await this.read();
+      if (!auth || (expectedSecret !== undefined && auth.sessionSigningSecret !== expectedSecret) || !isValidPassword(currentPassword, auth.passwordHash)) return false;
+      const updated: AuthConfig = {
+        ...auth,
+        passwordHash: hashPassword(newPassword),
+        sessionSigningSecret: randomBytes(32).toString("base64url"),
+      };
+      const temporaryFile = `${this.authFile}.${randomBytes(8).toString("hex")}.tmp`;
+      try {
+        await writeFile(temporaryFile, `${JSON.stringify(updated, null, 2)}\n`, { encoding: "utf8", mode: 0o600, flag: "wx" });
+        await rename(temporaryFile, this.authFile);
+      } finally {
+        await unlink(temporaryFile).catch((error: NodeJS.ErrnoException) => {
+          if (error.code !== "ENOENT") throw error;
+        });
+      }
+      return true;
+    } finally {
+      await lock.close();
+      await unlink(lockFile);
+    }
   }
 }
 
