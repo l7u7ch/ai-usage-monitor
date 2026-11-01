@@ -325,12 +325,7 @@ export function Dashboard({
   return (
     <>
       <header className="sticky top-0 z-10 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
-        <div className="mx-auto flex min-h-16 w-full max-w-[1500px] flex-wrap items-center justify-between gap-3 px-6 py-3 lg:px-10">
-          <div className="flex items-baseline gap-3">
-            <p className="text-sm font-semibold tracking-[0.16em]">
-              AI Usage Monitor
-            </p>
-          </div>
+        <div className="mx-auto flex min-h-16 w-full max-w-[1500px] flex-wrap items-center justify-end gap-3 px-6 py-3 lg:px-10">
           <div className="flex flex-wrap items-center gap-2">
             <Button variant="outline" size="sm" aria-label="リセット表示を切り替え" aria-pressed={showRemaining} onClick={() => setShowRemaining((value) => !value)}>
               <Clock />
