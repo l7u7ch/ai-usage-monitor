@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState, type MouseEvent } from "react";
-import { AlertCircle, ArrowDown, ArrowUp, Pencil, Trash2 } from "lucide-react";
+import { AlertCircle, ArrowDown, ArrowUp, LogIn, Pencil, Trash2 } from "lucide-react";
 import { tableFeatures, useTable } from "@tanstack/react-table";
 import type { ColumnDef } from "@tanstack/react-table";
 import { ContextMenu as ContextMenuPrimitive } from "radix-ui";
@@ -138,9 +138,6 @@ function AccountContextMenu({
   onReauthenticate: (account: AccountUsage) => void;
   onDelete: (account: AccountUsage) => void;
 }) {
-  // Keep the handler wired while the reauthentication menu item is hidden.
-  void onReauthenticate;
-
   return (
     <ContextMenuPrimitive.Portal>
       <ContextMenuPrimitive.Content
@@ -171,16 +168,15 @@ function AccountContextMenu({
           <Pencil className="size-4 shrink-0" aria-hidden="true" />
           ラベルを変更
         </ContextMenuPrimitive.Item>
-        {/* 一時的に非表示。再有効化するときはアクションを戻す。 */}
-        {/*
         <ContextMenuPrimitive.Item
-          className="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none focus:bg-accent focus:text-accent-foreground"
+          disabled={busy}
+          className="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50"
           onSelect={() => onReauthenticate(account)}
         >
           <LogIn className="size-4 shrink-0" aria-hidden="true" />
           再ログイン
         </ContextMenuPrimitive.Item>
-        */}
+
         <ContextMenuPrimitive.Item
           disabled={busy}
           className="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 text-sm text-destructive outline-none focus:bg-accent focus:text-destructive data-[disabled]:pointer-events-none data-[disabled]:opacity-50"

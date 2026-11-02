@@ -175,7 +175,7 @@ describe("AccountUsageTable", () => {
     expect(accountRow.querySelectorAll(":scope > th, :scope > td")).toHaveLength(6);
   });
 
-  it("shows icons for available actions and hides reauthentication", async () => {
+  it("shows icons for available actions including reauthentication", async () => {
     const { container } = renderAccount();
     openAccountContextMenu(container);
 
@@ -185,7 +185,7 @@ describe("AccountUsageTable", () => {
 
     expect(rename.querySelector("svg")).not.toBeNull();
     expect(remove.querySelector("svg")).not.toBeNull();
-    expect(menu.queryByRole("menuitem", { name: "再ログイン" })).not.toBeInTheDocument();
+    expect(menu.getByRole("menuitem", { name: "再ログイン" }).querySelector("svg")).not.toBeNull();
   });
 
   it("disables moving past either account-list boundary", async () => {

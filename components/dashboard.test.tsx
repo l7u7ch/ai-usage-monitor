@@ -429,12 +429,18 @@ describe("Dashboard", () => {
     });
   });
 
-  it("hides reauthentication for a registered account", async () => {
-    render(<Dashboard initialAccounts={accounts} />);
+  it("starts reauthentication for a signed-out account from its context menu", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ accountId: "account-1", loginId: "reauth-1", verificationUrl: "https://auth.openai.com/device", userCode: "REAUTH-12" }),
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    render(<Dashboard initialAccounts={[{ ...accounts[0], status: "signed-out" }]} />);
     openAccountMenu();
 
-    expect(await screen.findByRole("menuitem", { name: "ラベルを変更" })).toBeInTheDocument();
-    expect(screen.queryByRole("menuitem", { name: "再ログイン" })).not.toBeInTheDocument();
+    fireEvent.click(await screen.findByRole("menuitem", { name: "再ログイン" }));
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledWith("/api/accounts/account-1/login", { method: "POST" }));
+    expect(await screen.findByText("REAUTH-12")).toBeInTheDocument();
   });
 
   it("asks for confirmation before deleting a registered account", async () => {
